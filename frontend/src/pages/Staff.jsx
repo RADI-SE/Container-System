@@ -1,4 +1,5 @@
 import ContainersGrid from "../components/ContainersGrid";
+import InventoryTable from "../components/InventoryTable";
 import { useUserContainers } from "../hooks/useContainers";
 import useAuthStore from "../store/useAuthStore";
 
@@ -16,6 +17,7 @@ function Staff() {
   return (
     <>
       <ContainersGrid containers={data || []} detailsBasePath="/staff-containers" />
+     
     </>
   );
 }

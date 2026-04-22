@@ -130,7 +130,8 @@ const fetchUserContainers = async (userId) => {
     withCredentials: true,
   });
 
-  return data.data || data; 
+  const payload = data?.data != null ? data.data : data;
+  return Array.isArray(payload) ? payload : [];
 };
 export const useUserContainers = (userId) => {
   return useQuery({

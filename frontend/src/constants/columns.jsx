@@ -97,3 +97,46 @@ export const getContainerColumns = (onEdit, onDelete) => [
     ),
   },
 ];
+
+export const getInventoryColumns = [
+  {
+    header: "Container No",
+    accessorKey: "containerNumber",
+  },
+  {
+    header: "Item Code",
+    accessorKey: "itemCode",
+  },
+  {
+    header: "SAL Cases",
+    accessorKey: "salCases",
+  },
+  {
+    header: "SAL Outers",
+    accessorKey: "salOuters",
+  },
+  {
+    header: "SAL PCS",
+    accessorKey: "salPcs",
+  },
+  {
+    header: "DMG Cases",
+    accessorKey: "dmgCases",
+  },
+  {
+    header: "DMG Outers",
+    accessorKey: "dmgOuters",
+  },
+  {
+    header: "DMG PCS",
+    accessorKey: "dmgPcs",
+  },
+  {
+    header: "Added By",
+    accessorKey: "addedBy",
+  },
+  {
+    header: "Date",
+    accessorKey: "date",
+  },
+];

@@ -8,6 +8,7 @@ import PrivateRoute from './components/auth/PrivateRoute';
 import Containers from './pages/Containers';
 import Staff from './pages/Staff';
 import ContainerDetails from './components/ContainerDetails';
+import Inventory from './pages/Inventory';
 
 
 const queryClient = new QueryClient({
@@ -23,10 +24,10 @@ function RoleHomeRedirect() {
 
   return <Navigate to="/containers" replace />;
 }
- 
+
 function DashboardContent() {
   const { isAuthenticated, isCheckingAuth } = useAuthStore();
-   if (isCheckingAuth) return <div className="spinner">...</div>;
+  if (isCheckingAuth) return <div className="spinner">...</div>;
 
   return (
     <Router>
@@ -40,12 +41,12 @@ function DashboardContent() {
             path="containers"
             element={
               <PrivateRoute allowedRoles={["admin"]}>
-               <Containers />
+                <Containers />
               </PrivateRoute>
             }
           />
           <Route path="staff-containers" element={
-            <PrivateRoute allowedRoles={[ "staff"]}>
+            <PrivateRoute allowedRoles={["staff"]}>
               <Staff />
             </PrivateRoute>
           } />
@@ -57,6 +58,16 @@ function DashboardContent() {
               </PrivateRoute>
             }
           />
+
+          <Route
+            path="inventory"
+            element={
+              <PrivateRoute allowedRoles={["staff"]}>
+                <Inventory />
+              </PrivateRoute>
+            }
+          />
+
           <Route index element={<RoleHomeRedirect />} />
         </Route>
       </Routes>

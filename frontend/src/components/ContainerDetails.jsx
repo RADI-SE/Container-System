@@ -7,7 +7,7 @@ function ContainerDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
+  
   const stateContainer = location.state?.container;
   const { data, isLoading, isError, error } = useContainerById(id);
   const container = data || stateContainer;

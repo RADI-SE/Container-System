@@ -4,6 +4,16 @@ import axios from 'axios';
 const API_URL = "/api/auth";
 axios.defaults.withCredentials = true;
 
+const normalizeUser = (rawUser) => {
+  if (!rawUser) return null;
+  const normalizedId = rawUser._id || rawUser.id || null;
+  return {
+    ...rawUser,
+    _id: normalizedId,
+    id: normalizedId,
+  };
+};
+
 const useAuthStore = create((set) => ({
    
   user: null,
@@ -22,16 +32,16 @@ const useAuthStore = create((set) => ({
       const response = await axios.post(`${API_URL}/signin`, { email, password });
 
       if (response.data && response.data.user) {
-        const { user, token } = response.data;
-        
-        localStorage.setItem('token', token);
+        const user = normalizeUser(response.data.user);
 
         set({
-          user: user,
+          user,
           staff: user.role === 'staff' ? user : null, // Automatically set staff if role matches
           isAuthenticated: true,
           isLoading: false,
           isCheckingAuth: false,
+          isError: false,
+          errorMessage: null,
         });
         return user;
       } else {
@@ -66,36 +76,46 @@ const useAuthStore = create((set) => ({
     });
   },
 
-  logout: () => {
-    localStorage.removeItem('token');
-    set({ 
-      user: null, 
-      staff: null, 
-      isAuthenticated: false,
-      errorMessage: null,
-      isError: false 
-    });
+  logout: async () => {
+    try {
+      await axios.post(`${API_URL}/logout`);
+    } catch (error) {
+      // Always clear client auth state even if network/logout call fails.
+    } finally {
+      localStorage.removeItem('token');
+      set({
+        user: null,
+        staff: null,
+        isAuthenticated: false,
+        errorMessage: null,
+        isError: false,
+        isCheckingAuth: false,
+      });
+    }
   }, 
 checkAuth: async () => {
   set({ isCheckingAuth: true });
-  const token = localStorage.getItem('token');
-
-  if (!token) {
-    set({ isCheckingAuth: false, isAuthenticated: false, user: null });
-    return;
-  }
 
   try {  
 
     const response = await axios.get(`${API_URL}/check-auth`); 
+    const user = normalizeUser(response.data.user);
     set({ 
-      user: response.data.user, 
+      user,
+      staff: user?.role === 'staff' ? user : null,
       isAuthenticated: true, 
-      isCheckingAuth: false 
+      isCheckingAuth: false,
+      isError: false,
+      errorMessage: null,
     });
   } catch (error) {
     localStorage.removeItem('token');
-    set({ user: null, isAuthenticated: false, isCheckingAuth: false });
+    set({
+      user: null,
+      staff: null,
+      isAuthenticated: false,
+      isCheckingAuth: false,
+    });
   }
 },
  

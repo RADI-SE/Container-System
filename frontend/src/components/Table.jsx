@@ -39,23 +39,30 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
      
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <h2 className="text-xl font-bold text-gray-800 tracking-tight">{title}</h2>
+
         <div className="flex items-center gap-3">
           <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit">
             {tableData.length} Records Found
           </div>
-          <button
-            onClick={onAddClick}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95"
-          >
-            <span className="text-lg">+</span> New Container
-          </button>
 
-             <button
-            onClick={onClickAssignUser}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95"
-          >
-            <span className="text-lg">+</span> Assign Containers
-          </button>
+          {title !== "Inventory Workspace" && (
+            <>
+              <button
+                onClick={onAddClick}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95"
+              >
+                <span className="text-lg">+</span> New Container
+              </button>
+
+              <button
+                onClick={onClickAssignUser}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95"
+              >
+                <span className="text-lg">+</span> Assign Containers
+              </button>
+            </>
+          )}
+
         </div>
       </div>
 
@@ -73,6 +80,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
                 </tr>
               ))}
             </thead>
+
             <tbody className="divide-y divide-gray-100">
               {table.getRowModel().rows.length > 0 ? (
                 table.getRowModel().rows.map(row => (
@@ -101,6 +109,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
               Page <strong>{table.getState().pagination.pageIndex + 1}</strong> of{' '}
               <strong>{table.getPageCount()}</strong>
             </span>
+
             <select
               value={table.getState().pagination.pageSize}
               onChange={e => table.setPageSize(Number(e.target.value))}
@@ -122,6 +131,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
             >
               Previous
             </button>
+
             <button
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
@@ -132,6 +142,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
           </div>
         </div>
       </div>
+
       <p className="text-center text-[10px] text-gray-400 sm:hidden">
         Swipe horizontally to view more columns →
       </p>
