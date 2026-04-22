@@ -1,0 +1,477 @@
+const console = require("console");
+const Container = require("../models/container.model.js");
+const fs = require('fs');
+
+const createContainer = async (req, res) => {
+  const {
+    containerName,
+    containerNumber,
+    billOfLading,
+    purchaseOrder,
+    invoiceNumber,
+    receivingBranch,
+    region
+  } = req.body;
+
+  try {
+    const requiredFields = [
+      "containerName",
+      "containerNumber",
+      "billOfLading",
+      "purchaseOrder",
+      "invoiceNumber",
+      "receivingBranch",
+      "region"
+    ];
+
+    for (const field of requiredFields) {
+      if (!req.body[field]) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} is required`
+        });
+      }
+    }
+
+    const existingContainer = await Container.findOne({
+      $or: [
+        { containerNumber },
+        { billOfLading }
+      ]
+    });
+
+    if (existingContainer) {
+      return res.status(400).json({
+        success: false,
+        message: "Container Number or Bill of Lading already exists"
+      });
+    }
+
+    const files = req.files || [];
+    let fileIndex = 0;
+ 
+    const documents = [null, null, null];
+ 
+    if (files[fileIndex]) {
+      documents[0] = {
+        fileName: files[fileIndex].originalname,
+        filePath: files[fileIndex].path,
+        fileType: files[fileIndex].mimetype,
+        uploadedAt: Date.now()
+      };
+      fileIndex++;
+    }
+ 
+    if (files[fileIndex]) {
+      documents[1] = {
+        fileName: files[fileIndex].originalname,
+        filePath: files[fileIndex].path,
+        fileType: files[fileIndex].mimetype,
+        uploadedAt: Date.now()
+      };
+      fileIndex++;
+    }
+ 
+    if (files[fileIndex]) {
+      documents[2] = {
+        fileName: files[fileIndex].originalname,
+        filePath: files[fileIndex].path,
+        fileType: files[fileIndex].mimetype,
+        uploadedAt: Date.now()
+      };
+    }
+
+    const newContainer = new Container({
+      containerName,
+      containerNumber,
+      billOfLading,
+      purchaseOrder,
+      invoiceNumber,
+      receivingBranch,
+      region,
+      owner: req.userId,
+      documents
+    });
+
+    const savedContainer = await newContainer.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Container created successfully",
+      data: savedContainer
+    });
+
+  } catch (error) {
+    console.error("Error creating container:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Server error while creating container"
+    });
+  }
+};
+
+const getContainers = async (req, res) => {
+  try {
+    const containers = await Container.find({
+      $or: [
+        { owner: req.userId },
+        { allowedUsers: req.userId }
+      ]
+    })
+      .populate("owner", "name email")
+      .populate("allowedUsers", "name email") 
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: containers.length, data: containers });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error fetching containers" });
+  }
+};
+
+const shareContainer = async (req, res) => {
+  const { containerId, userIdToAllow } = req.body;
+
+  console.log("containerId ,containerId", containerId, userIdToAllow )
+
+  try {
+    const container = await Container.findById(containerId);
+    if (!container) return res.status(404).json({ message: "Container not found" });
+ 
+    const ownerId = container.owner.toString();
+    console.log("ownerId", ownerId)
+    const currentUserId = req.userId;
+    console.log("currentUserId", currentUserId)
+
+    if (ownerId !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You do not own this container"
+      });
+    } 
+    container.allowedUsers.addToSet(userIdToAllow);
+    await container.save();
+
+    res.status(200).json({ success: true, message: "Access shared successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}; 
+const UnshareContainer = async (req, res) => {
+  try {
+    const { containerId, userIdToRemove } = req.body;
+
+    if (!containerId || !userIdToRemove) {
+      return res.status(400).json({
+        success: false,
+        message: "containerId and userIdToRemove are required",
+      });
+    }
+
+    const container = await Container.findById(containerId);
+
+    if (!container) {
+      return res.status(404).json({
+        success: false,
+        message: "Container not found",
+      });
+    }
+ 
+    if (container.owner.toString() !== req.userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+ 
+    container.allowedUsers.pull(userIdToRemove);
+    await container.save();
+
+    res.status(200).json({
+      success: true,
+      message: "User access removed",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error removing access",
+    });
+  }
+};
+
+
+
+const getAvailableContainersForUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log("Fetching available containers for userId:", userId);
+    const containers = await Container.find({
+      $or: [
+        { allowedUsers: { $ne: userId } },
+        { allowedUsers: { $exists: false } },
+        { allowedUsers: { $size: 0 } }
+      ]
+    })
+      .populate("owner", "name email")
+      .sort({ createdAt: -1 });
+
+      console.log(`Found ${containers} available containers for userId ${userId}`);
+    res.status(200).json({
+      success: true,
+      count: containers.length,
+      data: containers
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch available containers"
+    });
+  }
+};
+
+const updateContainer = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const container = await Container.findById(id);
+    if (!container)
+      return res.status(404).json({ message: "Container not found" });
+
+    if (container.owner.toString() !== req.userId)
+      return res.status(403).json({ message: "Unauthorized" });
+
+    const updateData = { ...req.body };
+
+    const uploadedFiles = req.files || [];
+    let fileIndex = 0;
+ 
+    let documents = container.documents || [null, null, null];
+    while (documents.length < 3) documents.push(null);
+ 
+    const replaceDoc = (index, file) => {
+      if (documents[index]?.filePath && fs.existsSync(documents[index].filePath)) {
+        fs.unlinkSync(documents[index].filePath);
+      }
+
+      documents[index] = {
+        fileName: file.originalname,
+        filePath: file.path,
+        fileType: file.mimetype,
+        uploadedAt: Date.now(),
+      };
+    };
+ 
+    const replaceBol = req.body.replaceBol === "true";
+    const replaceInvoice = req.body.replaceInvoice === "true";
+    const replacePo = req.body.replacePo === "true";
+
+    if (replaceBol && uploadedFiles[fileIndex]) {
+      replaceDoc(0, uploadedFiles[fileIndex++]);
+    }
+
+    if (replaceInvoice && uploadedFiles[fileIndex]) {
+      replaceDoc(1, uploadedFiles[fileIndex++]);
+    }
+
+    if (replacePo && uploadedFiles[fileIndex]) {
+      replaceDoc(2, uploadedFiles[fileIndex++]);
+    }
+
+    updateData.documents = documents;
+
+    const updatedContainer = await Container.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      data: updatedContainer,
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const deleteContainer = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const container = await Container.findById(id);
+    if (!container) return res.status(404).json({ message: "Container not found" });
+
+    if (container.owner.toString() !== req.userId) {
+      return res.status(403).json({ message: "Unauthorized: Only the owner can delete this" });
+    }
+
+    await Container.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: "Container deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error deleting container" });
+  }
+};
+
+
+
+const addInventoryItem = async (req, res) => {
+  const { id } = req.params;
+  const { itemCode, salQty, dmgQty } = req.body;
+
+  try {
+    const container = await Container.findById(id);
+    if (!container) {
+      return res.status(404).json({ success: false, message: "Container not found" });
+    }
+
+    const isOwner = container.owner.toString() === req.userId;
+    const isAllowed = container.allowedUsers.some(
+      (user) => user.toString() === req.userId
+    );
+
+    if (!isOwner && !isAllowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized: You do not have permission to add items to this container"
+      });
+    }
+
+    const newItem = {
+      itemCode,
+      salQty: {
+        cases: salQty?.cases || 0,
+        outers: salQty?.outers || 0,
+        pcs: salQty?.pcs || 0
+      },
+      dmgQty: {
+        cases: dmgQty?.cases || 0,
+        outers: dmgQty?.outers || 0,
+        pcs: dmgQty?.pcs || 0
+      },
+      addedBy: req.userId
+    };
+
+    container.inventory.push(newItem);
+    await container.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Item added to manifest successfully",
+      data: container.inventory[container.inventory.length - 1]
+    });
+
+  } catch (error) {
+    console.error("Add Inventory Error:", error);
+    res.status(500).json({ success: false, message: "Server error while adding item" });
+  }
+};
+
+
+const updateInventoryItem = async (req, res) => {
+  const { id, itemId } = req.params;
+  const { itemCode, salQty, dmgQty } = req.body;
+
+  try {
+    const container = await Container.findOneAndUpdate(
+      {
+        _id: id,
+        "inventory._id": itemId
+      },
+      {
+        $set: {
+          "inventory.$.itemCode": itemCode,
+          "inventory.$.salQty": salQty,
+          "inventory.$.dmgQty": dmgQty,
+          "inventory.$.updatedAt": Date.now()
+        }
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!container) {
+      return res.status(404).json({ success: false, message: "Container or Item not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Inventory row updated successfully",
+      data: container.inventory
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Error updating inventory row" });
+  }
+};
+
+const deleteInventoryItem = async (req, res) => {
+  const { id, itemId } = req.params; // id = container, itemId = the row
+
+  try {
+    const container = await Container.findByIdAndUpdate(
+      id,
+      { $pull: { inventory: { _id: itemId } } },
+      { new: true }
+    );
+
+    if (!container) return res.status(404).json({ message: "Not found" });
+
+    res.status(200).json({ success: true, message: "Row removed from table" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getUserContainers = async (req, res) => {
+  try {    
+    const { userId } = req.params;
+
+    const containers = await Container.find({
+      $or: [
+        { owner: userId },
+        { allowedUsers: userId }
+      ]
+    })
+      .populate("owner", "name email")
+      .sort({ createdAt: -1 });
+ 
+    const filteredContainers = containers.map(container => {
+      const containerObj = container.toObject();
+     const isOwner = container.owner._id.toString() === userId;
+      return isOwner ? containerObj : {
+        ...containerObj,
+        allowedUsers: undefined 
+      };
+    });
+ 
+    res.status(200).json({
+      success: true,
+      count: filteredContainers.length,
+      data: filteredContainers
+    });
+  }
+    catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch available containers"
+    });
+  }
+};
+module.exports = {
+  createContainer,
+  getContainers,
+  shareContainer,
+  UnshareContainer,
+  getAvailableContainersForUser,
+  updateContainer,
+  deleteContainer,
+  addInventoryItem,
+  updateInventoryItem,
+  deleteInventoryItem,
+  getUserContainers
+
+};
