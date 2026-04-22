@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/verifyToken.js');
 const upload = require('../middleware/uploadMiddleware');
 
-const { createContainer, getContainers, shareContainer,updateContainer,deleteContainer,addInventoryItem,deleteInventoryItem,updateInventoryItem , UnshareContainer,getAvailableContainersForUser,getUserContainers } = require('../controllers/container.controller.js');
+const { createContainer, getContainers, getContainerById, shareContainer,updateContainer,deleteContainer,addInventoryItem,deleteInventoryItem,updateInventoryItem , UnshareContainer,getAvailableContainersForUser,getUserContainers } = require('../controllers/container.controller.js');
 
 router.post(
   '/', 
@@ -24,6 +24,7 @@ router.put("/:id", verifyToken,
 
 
 router.get("/user/:userId",verifyToken, getUserContainers);   
+router.get("/:id", verifyToken, getContainerById);
 router.delete("/:id", verifyToken, deleteContainer);
 router.post('/:id/inventory',verifyToken, addInventoryItem) 
 router.put("/:id/inventory/:itemId", verifyToken, updateInventoryItem);

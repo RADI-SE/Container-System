@@ -127,6 +127,45 @@ const getContainers = async (req, res) => {
   }
 };
 
+const getContainerById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const container = await Container.findById(id)
+      .populate("owner", "name email")
+      .populate("allowedUsers", "name email");
+
+    if (!container) {
+      return res.status(404).json({
+        success: false,
+        message: "Container not found"
+      });
+    }
+
+    const isOwner = container.owner?._id?.toString() === req.userId;
+    const isAllowed = container.allowedUsers?.some(
+      (user) => user?._id?.toString() === req.userId
+    );
+
+    if (!isOwner && !isAllowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: container
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error fetching container"
+    });
+  }
+};
+
 const shareContainer = async (req, res) => {
   const { containerId, userIdToAllow } = req.body;
 
@@ -438,21 +477,14 @@ const getUserContainers = async (req, res) => {
     })
       .populate("owner", "name email")
       .sort({ createdAt: -1 });
- 
-    const filteredContainers = containers.map(container => {
-      const containerObj = container.toObject();
-     const isOwner = container.owner._id.toString() === userId;
-      return isOwner ? containerObj : {
-        ...containerObj,
-        allowedUsers: undefined 
-      };
-    });
+      console.log(`Found ${containers.length} containers for userId ${userId}`);
  
     res.status(200).json({
       success: true,
-      count: filteredContainers.length,
-      data: filteredContainers
+      count: containers.length ,
+      data: containers
     });
+    console.log("Response sent for getUserContainers");
   }
     catch (error) {
     res.status(500).json({
@@ -464,6 +496,7 @@ const getUserContainers = async (req, res) => {
 module.exports = {
   createContainer,
   getContainers,
+  getContainerById,
   shareContainer,
   UnshareContainer,
   getAvailableContainersForUser,

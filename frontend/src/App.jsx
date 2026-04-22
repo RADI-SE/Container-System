@@ -1,18 +1,28 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from './store/useAuthStore';
 import Login from './pages/Login';
 import AppLayout from './components/layout/AppLayout';
 import PrivateRoute from './components/auth/PrivateRoute';
-import Table from './components/Table';
 import Containers from './pages/Containers';
-import Users from './pages/Users';
+import Staff from './pages/Staff';
+import ContainerDetails from './components/ContainerDetails';
 
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false } },
 });
+
+function RoleHomeRedirect() {
+  const user = useAuthStore((state) => state.user);
+
+  if (user?.role === "staff") {
+    return <Navigate to="/staff-containers" replace />;
+  }
+
+  return <Navigate to="/containers" replace />;
+}
  
 function DashboardContent() {
   const { isAuthenticated, isCheckingAuth } = useAuthStore();
@@ -34,7 +44,20 @@ function DashboardContent() {
               </PrivateRoute>
             }
           />
-          <Route index element={<Navigate to="/containers" replace />} />
+          <Route path="staff-containers" element={
+            <PrivateRoute allowedRoles={[ "staff"]}>
+              <Staff />
+            </PrivateRoute>
+          } />
+          <Route
+            path="staff-containers/:id"
+            element={
+              <PrivateRoute allowedRoles={["staff"]}>
+                <ContainerDetails />
+              </PrivateRoute>
+            }
+          />
+          <Route index element={<RoleHomeRedirect />} />
         </Route>
       </Routes>
     </Router>

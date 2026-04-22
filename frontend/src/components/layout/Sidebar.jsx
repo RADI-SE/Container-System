@@ -18,7 +18,8 @@ export default function Sidebar() {
     ],
  
     staff: [
-      { name: "My Containers", path: "/containers", icon: <Package size={18} /> },
+ 
+      { name: "My Containers", path: "/staff-containers", icon: <Package size={18} /> },
       { name: "Manage Inventory", path: "/inventory", icon: <Package size={18} /> },
     ]
   };

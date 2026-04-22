@@ -7,7 +7,7 @@ const fetchContainers = async () => {
   const { data } = await axios.get(API_URL, {
     withCredentials: true,
   });
-  return data;
+  return data?.data || data;
 };
 
 export const useContainers = () => {
@@ -129,14 +129,34 @@ const fetchUserContainers = async (userId) => {
   const { data } = await axios.get(`${API_URL}/user/${userId}`, {
     withCredentials: true,
   });
-  return data;
-};
 
+  return data.data || data; 
+};
 export const useUserContainers = (userId) => {
   return useQuery({
     queryKey: ["user-containers", userId],
     queryFn: () => fetchUserContainers(userId),
     enabled: !!userId,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+  });
+
+};
+
+const fetchContainerById = async (containerId) => {
+  const { data } = await axios.get(`${API_URL}/${containerId}`, {
+    withCredentials: true,
+  });
+
+  return data?.data || data;
+};
+
+export const useContainerById = (containerId) => {
+  return useQuery({
+    queryKey: ["container", containerId],
+    queryFn: () => fetchContainerById(containerId),
+    enabled: !!containerId,
     staleTime: 0,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
