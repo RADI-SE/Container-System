@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useUserContainers } from "../hooks/useContainers";
 import useAuthStore from "../store/useAuthStore";
- 
 
 function ContainerSelect({ onSelect }) {
   const { user } = useAuthStore();
   const userId = user?._id;
+
+  const [selectedId, setSelectedId] = useState(""); // ⭐ control the dropdown
 
   const { data, isLoading, isError, error } = useUserContainers(userId);
   const raw = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
@@ -14,26 +15,33 @@ function ContainerSelect({ onSelect }) {
   if (isLoading) return <div>Loading containers...</div>;
   if (isError) return <div>Error: {error?.message || "Failed to load containers"}</div>;
 
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setSelectedId(value); 
+    setSelectedId(""); 
+
+    const container = containers.find(
+      (c) => String(c._id ?? c.id) === String(value)
+    );
+
+    if (container) onSelect(container);
+  };
+
   return (
     <div className="bg-white p-5 rounded-xl shadow-sm border flex items-center gap-4">
-
       <h2 className="font-semibold">Add Inventory</h2>
 
       <select
         className="border rounded-lg p-2"
-        defaultValue=""
-        onChange={(e) => {
-          const value = e.target.value;
-          const container = containers.find(
-            (c) => String(c._id ?? c.id) === String(value)
-          );
-          if (container) onSelect(container);
-        }}
+        value={selectedId} 
+        onChange={handleChange}
       >
         <option value="" disabled>Select Container</option>
+
         {containers.map((c) => {
           const id = c._id ?? c.id;
           if (id == null) return null;
+
           return (
             <option key={String(id)} value={String(id)}>
               {c.containerNumber}
@@ -41,7 +49,6 @@ function ContainerSelect({ onSelect }) {
           );
         })}
       </select>
-
     </div>
   );
 }

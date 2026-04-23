@@ -28,8 +28,9 @@ const handleSubmit = (e) => {
     salPcs: form.salPcs,
     dmgCases: form.dmgCases,
     dmgOuters: form.dmgOuters,
-    dmgPcs: form.dmgPcs, // Added missing form reference
+    dmgPcs: form.dmgPcs, 
   });
+
 
   onClose();
 };

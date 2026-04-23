@@ -2,11 +2,16 @@ import React, { useState } from "react";
 import ContainerSelect from "../components/ContainerSelect";
 import AddInventoryModal from "../components/AddInventoryModal.jsx";
 import InventoryTable from "../components/InventoryTable";
+import { useUserInventoryTableData } from "../hooks/useInventory.js";
+import useAuthStore  from "../store/useAuthStore.js";
 
-function Inventory() {
-  // Single source of truth: modal only opens when a container is set (avoids a null `container` render).
-  const [modalContainer, setModalContainer] = useState(null);
+function Inventory() { 
+   const [modalContainer, setModalContainer] = useState(null);
+    const { user } = useAuthStore();
+  const userId = user?._id || user?.id; 
+   const { data: inventoryData  } = useUserInventoryTableData(userId);
 
+   console.log("Inventory Data:", inventoryData); 
   const handleSelectContainer = (container) => {
     if (container) setModalContainer(container);
   };
@@ -15,14 +20,11 @@ function Inventory() {
     <div className="p-6 space-y-6">
 
       <h1 className="text-2xl font-bold">Inventory Workspace</h1>
-
-      {/* TOP SECTION */}
+ 
       <ContainerSelect onSelect={handleSelectContainer} />
-
-      {/* TABLE */}
-      <InventoryTable />
-
-      {/* MODAL */}
+ 
+      <InventoryTable data={inventoryData}  />
+ 
       {modalContainer && (
         <AddInventoryModal
           container={modalContainer}

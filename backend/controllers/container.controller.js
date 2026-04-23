@@ -502,6 +502,55 @@ const getUserContainers = async (req, res) => {
     });
   }
 };
+
+
+
+
+const getUserInventoryTableData = async (req, res) => {
+  try {
+    const { userId } = req.params;
+ 
+    const containers = await Container.find({
+      $or: [{ owner: userId }, { allowedUsers: userId }]
+    })
+      .populate("owner", "name email")
+      .sort({ createdAt: -1 });
+ 
+    const containersWithInventory = containers.filter(
+      (c) => c.inventory && c.inventory.length > 0
+    );
+ 
+    const tableData = containersWithInventory.flatMap((container) =>
+      container.inventory.map((item) => ({
+      
+        containerId: container._id,
+        containerNumber: container.containerNumber,
+        ownerName: container.owner?.name || "—",
+ 
+        itemCode: item.itemCode,
+        salQty: item.salQty,
+        dmgQty: item.dmgQty,
+        addedBy: item.addedBy,
+        createdAt: item.createdAt,
+      }))
+    );
+
+    console.log(`Found ${tableData.length} inventory rows for user ${userId}`);
+
+    res.status(200).json({
+      success: true,
+      count: tableData.length,
+      data: tableData,
+    });
+  } catch (error) {
+    console.error("getUserInventoryTableData error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch inventory table data",
+    });
+  }
+};
+
 module.exports = {
   createContainer,
   getContainers,
@@ -514,6 +563,7 @@ module.exports = {
   addInventoryItem,
   updateInventoryItem,
   deleteInventoryItem,
-  getUserContainers
-
+  getUserContainers,
+  getUserInventoryTableData
+  
 };
