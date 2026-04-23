@@ -75,9 +75,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
           className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"
           title="Edit"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
+          ✏️
         </button>
 
         <button
@@ -89,9 +87,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
           className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
           title="Delete"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          🗑️
         </button>
       </div>
     ),
@@ -100,7 +96,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
 
 
 
-export const getInventoryColumns = [
+export const getInventoryColumns = (onEdit, onDelete) => [
   {
     header: "Container No",
     accessorKey: "containerNumber",
@@ -109,42 +105,79 @@ export const getInventoryColumns = [
     header: "Item Code",
     accessorKey: "itemCode",
   },
- 
+
   {
+    id: "salCases",
     header: "SAL Cases",
     accessorFn: row => row.salQty?.cases ?? 0,
   },
-  { 
+  {
+    id: "salOuters",
+    header: "SAL Outers",
     accessorFn: row => row.salQty?.outers ?? 0,
   },
   {
+    id: "salPcs",
     header: "SAL PCS",
     accessorFn: row => row.salQty?.pcs ?? 0,
   },
- 
+
   {
+    id: "dmgCases",
     header: "DMG Cases",
     accessorFn: row => row.dmgQty?.cases ?? 0,
   },
   {
+    id: "dmgOuters",
     header: "DMG Outers",
     accessorFn: row => row.dmgQty?.outers ?? 0,
   },
   {
+    id: "dmgPcs",
     header: "DMG PCS",
     accessorFn: row => row.dmgQty?.pcs ?? 0,
   },
- 
+
   {
     header: "Owner",
     accessorKey: "ownerName",
   },
- 
+
   {
+    id: "date",
     header: "Date",
     accessorFn: row =>
       row.createdAt
         ? new Date(row.createdAt).toLocaleDateString()
         : "—",
+  },
+
+  // ACTIONS
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => (
+      <div className="flex gap-2">
+        <button
+          onClick={() => onEdit(row.original)}
+          className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-md transition-colors"
+          title="Edit"
+        >
+          ✏️
+        </button>
+
+        <button
+          onClick={() => {
+            if (window.confirm("Delete this item?")) {
+              onDelete(row.original._id);
+            }
+          }}
+          className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
+          title="Delete"
+        >
+          🗑️
+        </button>
+      </div>
+    ),
   },
 ];

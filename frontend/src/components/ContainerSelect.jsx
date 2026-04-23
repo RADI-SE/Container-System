@@ -6,7 +6,7 @@ function ContainerSelect({ onSelect }) {
   const { user } = useAuthStore();
   const userId = user?._id;
 
-  const [selectedId, setSelectedId] = useState(""); // ⭐ control the dropdown
+  const [selectedId, setSelectedId] = useState("");
 
   const { data, isLoading, isError, error } = useUserContainers(userId);
   const raw = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
