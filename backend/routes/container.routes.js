@@ -26,9 +26,11 @@ router.put("/:id", verifyToken,
 router.get("/user/:userId",verifyToken, getUserContainers);   
 router.get("/:id", verifyToken, getContainerById);
 router.delete("/:id", verifyToken, deleteContainer);
-router.post('/:id/inventory',verifyToken, addInventoryItem) 
-router.put("/:id/inventory/:itemId", verifyToken, updateInventoryItem);
-router.delete("/:id/inventory/:itemId", verifyToken, deleteInventoryItem);
+
+
+router.post('/:containerId/inventory',verifyToken, addInventoryItem) 
+router.put("/:containerId/inventory/:itemId", verifyToken, updateInventoryItem);
+router.delete("/:containerId/inventory/:itemId", verifyToken, deleteInventoryItem);
 
 
 module.exports = router;

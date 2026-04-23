@@ -49,9 +49,9 @@ const createContainer = async (req, res) => {
 
     const files = req.files || [];
     let fileIndex = 0;
- 
+
     const documents = [null, null, null];
- 
+
     if (files[fileIndex]) {
       documents[0] = {
         fileName: files[fileIndex].originalname,
@@ -61,7 +61,7 @@ const createContainer = async (req, res) => {
       };
       fileIndex++;
     }
- 
+
     if (files[fileIndex]) {
       documents[1] = {
         fileName: files[fileIndex].originalname,
@@ -71,7 +71,7 @@ const createContainer = async (req, res) => {
       };
       fileIndex++;
     }
- 
+
     if (files[fileIndex]) {
       documents[2] = {
         fileName: files[fileIndex].originalname,
@@ -119,7 +119,7 @@ const getContainers = async (req, res) => {
       ]
     })
       .populate("owner", "name email")
-      .populate("allowedUsers", "name email") 
+      .populate("allowedUsers", "name email")
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: containers.length, data: containers });
   } catch (error) {
@@ -169,12 +169,12 @@ const getContainerById = async (req, res) => {
 const shareContainer = async (req, res) => {
   const { containerId, userIdToAllow } = req.body;
 
-  console.log("containerId ,containerId", containerId, userIdToAllow )
+  console.log("containerId ,containerId", containerId, userIdToAllow)
 
   try {
     const container = await Container.findById(containerId);
     if (!container) return res.status(404).json({ message: "Container not found" });
- 
+
     const ownerId = container.owner.toString();
     console.log("ownerId", ownerId)
     const currentUserId = req.userId;
@@ -185,7 +185,7 @@ const shareContainer = async (req, res) => {
         success: false,
         message: "Unauthorized: You do not own this container"
       });
-    } 
+    }
     container.allowedUsers.addToSet(userIdToAllow);
     await container.save();
 
@@ -193,7 +193,7 @@ const shareContainer = async (req, res) => {
   } catch (error) {
     res.status(500).json({ success: false, message: "Server error" });
   }
-}; 
+};
 const UnshareContainer = async (req, res) => {
   try {
     const { containerId, userIdToRemove } = req.body;
@@ -213,14 +213,14 @@ const UnshareContainer = async (req, res) => {
         message: "Container not found",
       });
     }
- 
+
     if (container.owner.toString() !== req.userId) {
       return res.status(403).json({
         success: false,
         message: "Not authorized",
       });
     }
- 
+
     container.allowedUsers.pull(userIdToRemove);
     await container.save();
 
@@ -254,7 +254,7 @@ const getAvailableContainersForUser = async (req, res) => {
       .populate("owner", "name email")
       .sort({ createdAt: -1 });
 
-      console.log(`Found ${containers} available containers for userId ${userId}`);
+    console.log(`Found ${containers} available containers for userId ${userId}`);
     res.status(200).json({
       success: true,
       count: containers.length,
@@ -284,10 +284,10 @@ const updateContainer = async (req, res) => {
 
     const uploadedFiles = req.files || [];
     let fileIndex = 0;
- 
+
     let documents = container.documents || [null, null, null];
     while (documents.length < 3) documents.push(null);
- 
+
     const replaceDoc = (index, file) => {
       if (documents[index]?.filePath && fs.existsSync(documents[index].filePath)) {
         fs.unlinkSync(documents[index].filePath);
@@ -300,7 +300,7 @@ const updateContainer = async (req, res) => {
         uploadedAt: Date.now(),
       };
     };
- 
+
     const replaceBol = req.body.replaceBol === "true";
     const replaceInvoice = req.body.replaceInvoice === "true";
     const replacePo = req.body.replacePo === "true";
@@ -359,11 +359,11 @@ const deleteContainer = async (req, res) => {
 
 
 const addInventoryItem = async (req, res) => {
-  const { id } = req.params;
-  const { itemCode, salQty, dmgQty } = req.body;
+  const { containerId } = req.params;
+  const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body
 
   try {
-    const container = await Container.findById(id);
+    const container = await Container.findById(containerId);
     if (!container) {
       return res.status(404).json({ success: false, message: "Container not found" });
     }
@@ -380,24 +380,25 @@ const addInventoryItem = async (req, res) => {
       });
     }
 
+
+
     const newItem = {
       itemCode,
       salQty: {
-        cases: salQty?.cases || 0,
-        outers: salQty?.outers || 0,
-        pcs: salQty?.pcs || 0
+        cases: Number(salCases) || 0,
+        outers: Number(salOuters) || 0,
+        pcs: Number(salPcs) || 0
       },
       dmgQty: {
-        cases: dmgQty?.cases || 0,
-        outers: dmgQty?.outers || 0,
-        pcs: dmgQty?.pcs || 0
+        cases: Number(dmgCases) || 0,
+        outers: Number(dmgOuters) || 0,
+        pcs: Number(dmgPcs) || 0
       },
       addedBy: req.userId
     };
 
     container.inventory.push(newItem);
-    await container.save();
-
+    await container.save(); 
     res.status(201).json({
       success: true,
       message: "Item added to manifest successfully",
@@ -412,20 +413,28 @@ const addInventoryItem = async (req, res) => {
 
 
 const updateInventoryItem = async (req, res) => {
-  const { id, itemId } = req.params;
-  const { itemCode, salQty, dmgQty } = req.body;
+  const { containerId, itemId } = req.params;
+  const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body;
 
   try {
     const container = await Container.findOneAndUpdate(
       {
-        _id: id,
+        _id: containerId,
         "inventory._id": itemId
       },
       {
         $set: {
           "inventory.$.itemCode": itemCode,
-          "inventory.$.salQty": salQty,
-          "inventory.$.dmgQty": dmgQty,
+          "inventory.$.salQty": {
+            cases: Number(salCases) || 0,
+            outers: Number(salOuters) || 0,
+            pcs: Number(salPcs) || 0
+          },
+          "inventory.$.dmgQty": {
+            cases: Number(dmgCases) || 0,
+            outers: Number(dmgOuters) || 0,
+            pcs: Number(dmgPcs) || 0
+          },
           "inventory.$.updatedAt": Date.now()
         }
       },
@@ -448,11 +457,11 @@ const updateInventoryItem = async (req, res) => {
 };
 
 const deleteInventoryItem = async (req, res) => {
-  const { id, itemId } = req.params; // id = container, itemId = the row
+  const { containerId, itemId } = req.params; // containerId = container, itemId = the row
 
   try {
     const container = await Container.findByIdAndUpdate(
-      id,
+      containerId,
       { $pull: { inventory: { _id: itemId } } },
       { new: true }
     );
@@ -466,7 +475,7 @@ const deleteInventoryItem = async (req, res) => {
 };
 
 const getUserContainers = async (req, res) => {
-  try {    
+  try {
     const { userId } = req.params;
 
     const containers = await Container.find({
@@ -477,16 +486,16 @@ const getUserContainers = async (req, res) => {
     })
       .populate("owner", "name email")
       .sort({ createdAt: -1 });
-      console.log(`Found ${containers.length} containers for userId ${userId}`);
- 
+    console.log(`Found ${containers.length} containers for userId ${userId}`);
+
     res.status(200).json({
       success: true,
-      count: containers.length ,
+      count: containers.length,
       data: containers
     });
     console.log("Response sent for getUserContainers");
   }
-    catch (error) {
+  catch (error) {
     res.status(500).json({
       success: false,
       message: "Failed to fetch available containers"

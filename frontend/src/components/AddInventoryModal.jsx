@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-
+import { useAddInventoryItem } from "../hooks/useInventory";
 function AddInventoryModal({ container, onClose }) {
+  const { mutate: addInventoryItem } = useAddInventoryItem();
   const [form, setForm] = useState({
     itemCode: "",
     salCases: "",
@@ -16,13 +17,23 @@ function AddInventoryModal({ container, onClose }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (container?._id) {
-      console.log("Send to API", form, container._id);
-    }
-    onClose();
-  };
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  addInventoryItem({
+    containerId: container._id,
+    itemCode: form.itemCode,
+    salCases: form.salCases,
+    salOuters: form.salOuters,
+    salPcs: form.salPcs,
+    dmgCases: form.dmgCases,
+    dmgOuters: form.dmgOuters,
+    dmgPcs: form.dmgPcs, // Added missing form reference
+  });
+
+  onClose();
+};
+
 
   if (!container) return null;
 
