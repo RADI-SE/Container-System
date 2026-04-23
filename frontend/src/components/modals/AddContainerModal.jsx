@@ -26,10 +26,12 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
     });
 
     const [existingDocs, setExistingDocs] = useState([]);
+    const [submitError, setSubmitError] = useState('');
 
     useEffect(() => {
         if (!isOpen) return;
 
+        setSubmitError('');
         setFiles({ coa: null, PackingList: null, slips: null });
 
         if (initialData) {
@@ -78,39 +80,48 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
         data.append("replaceInvoice", !!files.PackingList);
         data.append("replacePo", !!files.slips);
 
-        if (files.coa) data.append("documents", files.coa);
-        if (files.PackingList) data.append("documents", files.PackingList);
-        if (files.slips) data.append("documents", files.slips);
+        if (files.coa) data.append("bol", files.coa);
+        if (files.PackingList) data.append("invoice", files.PackingList);
+        if (files.slips) data.append("po", files.slips);
 
         return data;
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setSubmitError('');
 
         const data = buildFormData();
 
         if (initialData) {
             if (onSubmit) {
                 onSubmit({ id: initialData._id, updatedData: data });
-            } else {
-                updateMutation.mutate(
-                    { id: initialData._id, updatedData: data },
-                    { onSuccess: () => onClose() }
-                );
+                return;
             }
 
-            onClose();
+            updateMutation.mutate(
+                { id: initialData._id, updatedData: data },
+                {
+                    onSuccess: () => onClose(),
+                    onError: (error) => {
+                        setSubmitError(error.response?.data?.message || error.message || 'Failed to update container');
+                    }
+                }
+            );
             return;
         }
 
         if (onSubmit) {
             onSubmit(data);
-        } else {
-            addMutation.mutate(data, { onSuccess: () => onClose() });
+            return;
         }
 
-        onClose();
+        addMutation.mutate(data, {
+            onSuccess: () => onClose(),
+            onError: (error) => {
+                setSubmitError(error.response?.data?.message || error.message || 'Failed to create container');
+            }
+        });
     };
     const FileUploadSlot = ({ label, slotName, selectedFile, index }) => {
         const existingFile = existingDocs[index];
@@ -168,35 +179,40 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
 
                 <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
                     <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+                        {submitError && (
+                            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {submitError}
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Container Name</label>
-                                <input required name="containerName" value={formData.containerName} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="containerName" value={formData.containerName} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Container Number</label>
-                                <input required name="containerNumber" value={formData.containerNumber} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="containerNumber" value={formData.containerNumber} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Bill of Lading</label>
-                                <input required name="billOfLading" value={formData.billOfLading} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="billOfLading" value={formData.billOfLading} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Purchase Order (PO)</label>
-                                <input required name="purchaseOrder" value={formData.purchaseOrder} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="purchaseOrder" value={formData.purchaseOrder} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Invoice Number</label>
-                                <input required name="invoiceNumber" value={formData.invoiceNumber} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="invoiceNumber" value={formData.invoiceNumber} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Receiving Branch</label>
-                                <input required name="receivingBranch" value={formData.receivingBranch} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
+                                <input  name="receivingBranch" value={formData.receivingBranch} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                             </div>
                             <div className="space-y-1 md:col-span-2">
                                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Region</label>
-                                <select required name="region" value={formData.region} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white">
+                                <select  name="region" value={formData.region} onChange={handleChange} className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-white">
                                     <option value="">Select a region</option>
                                     <option value="Central">Central</option>
                                     <option value="Western">Western</option>

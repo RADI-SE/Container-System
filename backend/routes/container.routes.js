@@ -8,7 +8,11 @@ const { createContainer, getContainers, getContainerById, shareContainer,updateC
 router.post(
   '/', 
   verifyToken, 
-  upload.array('documents', 3), 
+  upload.fields([
+    { name: 'bol', maxCount: 1 },
+    { name: 'invoice', maxCount: 1 },
+    { name: 'po', maxCount: 1 }
+  ]),
   createContainer
 );
 router.get("/",verifyToken, getContainers);
@@ -18,7 +22,11 @@ router.get("/available/:userId", verifyToken, getAvailableContainersForUser);
  
 
 router.put("/:id", verifyToken,
-  upload.array('documents', 3),
+  upload.fields([
+    { name: 'bol', maxCount: 1 },
+    { name: 'invoice', maxCount: 1 },
+    { name: 'po', maxCount: 1 }
+  ]),
    updateContainer);
    
 

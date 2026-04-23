@@ -47,36 +47,33 @@ const createContainer = async (req, res) => {
       });
     }
 
-    const files = req.files || [];
-    let fileIndex = 0;
+    const files = req.files || {};
 
     const documents = [null, null, null];
 
-    if (files[fileIndex]) {
+    if (files.bol?.[0]) {
       documents[0] = {
-        fileName: files[fileIndex].originalname,
-        filePath: files[fileIndex].path,
-        fileType: files[fileIndex].mimetype,
+        fileName: files.bol[0].originalname,
+        filePath: files.bol[0].path,
+        fileType: files.bol[0].mimetype,
         uploadedAt: Date.now()
       };
-      fileIndex++;
     }
 
-    if (files[fileIndex]) {
+    if (files.invoice?.[0]) {
       documents[1] = {
-        fileName: files[fileIndex].originalname,
-        filePath: files[fileIndex].path,
-        fileType: files[fileIndex].mimetype,
+        fileName: files.invoice[0].originalname,
+        filePath: files.invoice[0].path,
+        fileType: files.invoice[0].mimetype,
         uploadedAt: Date.now()
       };
-      fileIndex++;
     }
 
-    if (files[fileIndex]) {
+    if (files.po?.[0]) {
       documents[2] = {
-        fileName: files[fileIndex].originalname,
-        filePath: files[fileIndex].path,
-        fileType: files[fileIndex].mimetype,
+        fileName: files.po[0].originalname,
+        filePath: files.po[0].path,
+        fileType: files.po[0].mimetype,
         uploadedAt: Date.now()
       };
     }
@@ -102,7 +99,27 @@ const createContainer = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error creating container:", error.message);
+    console.error("Error creating container:", error);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors)
+        .map((err) => err.message)
+        .join(', ');
+      return res.status(400).json({
+        success: false,
+        message: messages,
+        errors: error.errors
+      });
+    }
+
+    if (error.code === 11000) {
+      const duplicateKey = Object.keys(error.keyValue)[0];
+      return res.status(400).json({
+        success: false,
+        message: `${duplicateKey} already exists`,
+        errors: error.keyValue
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Server error while creating container"
@@ -237,8 +254,6 @@ const UnshareContainer = async (req, res) => {
   }
 };
 
-
-
 const getAvailableContainersForUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -253,8 +268,7 @@ const getAvailableContainersForUser = async (req, res) => {
     })
       .populate("owner", "name email")
       .sort({ createdAt: -1 });
-
-    console.log(`Found ${containers} available containers for userId ${userId}`);
+ 
     res.status(200).json({
       success: true,
       count: containers.length,
@@ -282,10 +296,10 @@ const updateContainer = async (req, res) => {
 
     const updateData = { ...req.body };
 
-    const uploadedFiles = req.files || [];
-    let fileIndex = 0;
+    const uploadedFiles = req.files || {};
 
-    let documents = container.documents || [null, null, null];
+    const existingDocs = container.documents || [];
+    const documents = [...existingDocs];
     while (documents.length < 3) documents.push(null);
 
     const replaceDoc = (index, file) => {
@@ -305,19 +319,25 @@ const updateContainer = async (req, res) => {
     const replaceInvoice = req.body.replaceInvoice === "true";
     const replacePo = req.body.replacePo === "true";
 
-    if (replaceBol && uploadedFiles[fileIndex]) {
-      replaceDoc(0, uploadedFiles[fileIndex++]);
+    if (replaceBol && uploadedFiles.bol?.[0]) {
+      replaceDoc(0, uploadedFiles.bol[0]);
     }
 
-    if (replaceInvoice && uploadedFiles[fileIndex]) {
-      replaceDoc(1, uploadedFiles[fileIndex++]);
+    if (replaceInvoice && uploadedFiles.invoice?.[0]) {
+      replaceDoc(1, uploadedFiles.invoice[0]);
     }
 
-    if (replacePo && uploadedFiles[fileIndex]) {
-      replaceDoc(2, uploadedFiles[fileIndex++]);
+    if (replacePo && uploadedFiles.po?.[0]) {
+      replaceDoc(2, uploadedFiles.po[0]);
     }
 
-    updateData.documents = documents;
+    delete updateData.replaceBol;
+    delete updateData.replaceInvoice;
+    delete updateData.replacePo;
+
+    if (replaceBol || replaceInvoice || replacePo) {
+      updateData.documents = documents;
+    }
 
     const updatedContainer = await Container.findByIdAndUpdate(
       id,

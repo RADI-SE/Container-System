@@ -41,14 +41,16 @@ export const getContainerColumns = (onEdit, onDelete) => [
     header: "Documents",
     accessorKey: "documents",
     cell: ({ row }) => {
-      const docs = row.original.documents || [];
+      const docs = (row.original.documents || []).filter(
+        (doc) => doc && typeof doc.filePath === 'string' && doc.filePath.trim() !== ''
+      );
       if (docs.length === 0) return <span className="text-gray-300 text-[10px] italic">No docs</span>;
 
       return (
         <div className="flex gap-1.5">
-          {docs.map((doc) => (
+          {docs.map((doc, index) => (
             <a
-              key={doc._id}
+              key={doc._id || index}
               href={`http://localhost:5000/${doc.filePath.replace(/\\/g, '/')}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -63,6 +65,14 @@ export const getContainerColumns = (onEdit, onDelete) => [
         </div>
       );
     },
+  },
+  {
+    id: "date",
+    header: "Date",
+    accessorFn: row =>
+      row.createdAt
+        ? new Date(row.createdAt).toLocaleDateString()
+        : "—",
   },
   {
     id: "actions",
@@ -152,7 +162,6 @@ export const getInventoryColumns = (onEdit, onDelete) => [
         : "—",
   },
 
-  // ACTIONS
   {
     id: "actions",
     header: "Actions",
@@ -165,7 +174,7 @@ export const getInventoryColumns = (onEdit, onDelete) => [
         >
           ✏️
         </button>
-        
+
         <button
           onClick={() => {
             if (window.confirm("Delete this item?")) {
