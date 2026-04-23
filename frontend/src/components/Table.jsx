@@ -21,7 +21,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
     getPaginationRowModel: getPaginationRowModel(), 
     initialState: {
       pagination: {
-        pageSize: 10, 
+        pageSize: 5, 
       },
     },
   });
@@ -115,7 +115,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
               onChange={e => table.setPageSize(Number(e.target.value))}
               className="ml-2 p-1 text-sm border rounded bg-white outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {[10, 20, 30, 50].map(pageSize => (
+              {[5, 10, 20, 50].map(pageSize => (
                 <option key={pageSize} value={pageSize}>
                   Show {pageSize}
                 </option>

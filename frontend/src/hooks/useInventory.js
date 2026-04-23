@@ -38,3 +38,28 @@ export const useUserInventoryTableData = (userId) => {
     queryFn: () => fetchUserInventoryTableData(userId),
   });
 };
+
+export const deleteInventoryItem = async ({ containerId, itemId }) => {
+  await axios.delete(`${API_URL}/${containerId}/inventory/${itemId}`, { withCredentials: true });
+};
+
+export const useDeleteInventoryItem = () => {
+  const queryClient = useQueryClient(); 
+  return useMutation({
+    mutationFn: deleteInventoryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] }); 
+      queryClient.invalidateQueries({ queryKey: ["containers"] });
+    }
+  });
+};
+
+export const updateInventoryItem = async ({ containerId, itemId, updatedData }) => {
+  const { data } = await axios.put(
+    `${API_URL}/${containerId}/inventory/${itemId}`,
+    updatedData,
+    { withCredentials: true }
+  );
+  return data;
+};
+

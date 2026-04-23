@@ -526,7 +526,8 @@ const getUserInventoryTableData = async (req, res) => {
         containerId: container._id,
         containerNumber: container.containerNumber,
         ownerName: container.owner?.name || "—",
- 
+
+        itemId: item._id,
         itemCode: item.itemCode,
         salQty: item.salQty,
         dmgQty: item.dmgQty,

@@ -1,27 +1,37 @@
 import React, { memo, useMemo } from "react";
 import Table from "../components/Table.jsx";
 import { getInventoryColumns } from "../constants/columns.jsx";
+import { useDeleteInventoryItem } from "../hooks/useInventory.js";
 
 function InventoryTable({ data = [] }) {
+  const { mutate: deleteInventoryItem } = useDeleteInventoryItem();
 
-  // If you don't have edit/delete yet, just pass empty callbacks
-  const handleEdit = () => {};
-  const deleteMutate = () => {};
+  const handleEdit = (item) => {
+    console.log("Edit item:", item);
+  };
+ 
+  const handleDelete = (row) => {
+    console.log("Delete item:", row);
+    deleteInventoryItem({
+      containerId: row.containerId,
+      itemId: row.itemId,
+    });
+  };
 
   const columns = useMemo(
-    () => getInventoryColumns(handleEdit, deleteMutate),
-    [handleEdit, deleteMutate]
+    () => getInventoryColumns(handleEdit, handleDelete),
+    [deleteInventoryItem]
   );
 
   return (
     <Table
       title="Inventory Workspace"
       d={data}
-      columns={columns}   // ✅ correct
+      columns={columns}
       onAddClick={() => {}}
       onClickAssignUser={() => {}}
     />
   );
 }
 
-export default memo(InventoryTable);
+export default InventoryTable;
