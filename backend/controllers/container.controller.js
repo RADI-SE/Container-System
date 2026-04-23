@@ -416,6 +416,7 @@ const updateInventoryItem = async (req, res) => {
   const { containerId, itemId } = req.params;
   const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body;
 
+  console.log(`Updating inventory item with data:`, { containerId, itemId, itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs });
   try {
     const container = await Container.findOneAndUpdate(
       {

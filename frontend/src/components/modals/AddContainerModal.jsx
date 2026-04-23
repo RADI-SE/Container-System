@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useAddContainer, useUpdateContainer } from '../../hooks/useContainers';
 
-export default function AddContainerModal({ isOpen, onClose, initialData, title }) {
+const initialFormState = {
+    containerName: '',
+    containerNumber: '',
+    billOfLading: '',
+    purchaseOrder: '',
+    invoiceNumber: '',
+    receivingBranch: '',
+    region: '',
+};
+
+export default function AddContainerModal({ isOpen = true, onClose, initialData = null, title = null, onSubmit }) {
     const addMutation = useAddContainer();
     const updateMutation = useUpdateContainer();
 
     const isPending = addMutation.isPending || updateMutation.isPending;
 
-    const [formData, setFormData] = useState({
-        containerName: '',
-        containerNumber: '',
-        billOfLading: '',
-        purchaseOrder: '',
-        invoiceNumber: '',
-        receivingBranch: '',
-        region: '',
-    });
+    const [formData, setFormData] = useState(initialFormState);
 
     const [files, setFiles] = useState({
         coa: null,
@@ -26,32 +28,26 @@ export default function AddContainerModal({ isOpen, onClose, initialData, title 
     const [existingDocs, setExistingDocs] = useState([]);
 
     useEffect(() => {
-        if (isOpen) {
-            setFiles({ coa: null, PackingList: null, slips: null });
-            if (initialData) {
-                setFormData({
-                    containerName: initialData.containerName || '',
-                    containerNumber: initialData.containerNumber || '',
-                    billOfLading: initialData.billOfLading || '',
-                    purchaseOrder: initialData.purchaseOrder || '',
-                    invoiceNumber: initialData.invoiceNumber || '',
-                    receivingBranch: initialData.receivingBranch || '',
-                    region: initialData.region || '',
-                });
-                setExistingDocs(initialData.documents || []);
-            } else {
-                setFormData({
-                    containerName: '',
-                    containerNumber: '',
-                    billOfLading: '',
-                    purchaseOrder: '',
-                    invoiceNumber: '',
-                    receivingBranch: '',
-                    region: '',
-                });
-                setExistingDocs([]);
-            }
+        if (!isOpen) return;
+
+        setFiles({ coa: null, PackingList: null, slips: null });
+
+        if (initialData) {
+            setFormData({
+                containerName: initialData.containerName || '',
+                containerNumber: initialData.containerNumber || '',
+                billOfLading: initialData.billOfLading || '',
+                purchaseOrder: initialData.purchaseOrder || '',
+                invoiceNumber: initialData.invoiceNumber || '',
+                receivingBranch: initialData.receivingBranch || '',
+                region: initialData.region || '',
+            });
+            setExistingDocs(initialData.documents || []);
+            return;
         }
+
+        setFormData(initialFormState);
+        setExistingDocs([]);
     }, [initialData, isOpen]);
 
     if (!isOpen) return null;
@@ -71,32 +67,50 @@ export default function AddContainerModal({ isOpen, onClose, initialData, title 
         setFiles(prev => ({ ...prev, [slotName]: file }));
     };
 
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
+    const buildFormData = () => {
         const data = new FormData();
 
         Object.keys(formData).forEach((key) => {
             data.append(key, formData[key]);
         });
- 
+
         data.append("replaceBol", !!files.coa);
         data.append("replaceInvoice", !!files.PackingList);
         data.append("replacePo", !!files.slips);
- 
+
         if (files.coa) data.append("documents", files.coa);
         if (files.PackingList) data.append("documents", files.PackingList);
         if (files.slips) data.append("documents", files.slips);
 
+        return data;
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        const data = buildFormData();
+
         if (initialData) {
-            updateMutation.mutate(
-                { id: initialData._id, updatedData: data },
-                { onSuccess: () => onClose() }
-            );
+            if (onSubmit) {
+                onSubmit({ id: initialData._id, updatedData: data });
+            } else {
+                updateMutation.mutate(
+                    { id: initialData._id, updatedData: data },
+                    { onSuccess: () => onClose() }
+                );
+            }
+
+            onClose();
+            return;
+        }
+
+        if (onSubmit) {
+            onSubmit(data);
         } else {
             addMutation.mutate(data, { onSuccess: () => onClose() });
         }
+
+        onClose();
     };
     const FileUploadSlot = ({ label, slotName, selectedFile, index }) => {
         const existingFile = existingDocs[index];
@@ -142,11 +156,13 @@ export default function AddContainerModal({ isOpen, onClose, initialData, title 
         );
     };
 
+    const displayTitle = title || (initialData ? 'Edit Container' : 'Add Container');
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
-                    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{displayTitle}</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors text-2xl">&times;</button>
                 </div>
 

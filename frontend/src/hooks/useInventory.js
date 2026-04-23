@@ -52,14 +52,50 @@ export const useDeleteInventoryItem = () => {
       queryClient.invalidateQueries({ queryKey: ["containers"] });
     }
   });
-};
+}; 
 
-export const updateInventoryItem = async ({ containerId, itemId, updatedData }) => {
+const updateInventoryItem = async ({ containerId, itemId, updatedData }) => {
+  const {
+    itemCode,
+    salQty,
+    dmgQty,
+    salCases,
+    salOuters,
+    salPcs,
+    dmgCases,
+    dmgOuters,
+    dmgPcs,
+  } = updatedData;
+
+  const payload = {
+    itemCode,
+    salCases: salQty?.cases ?? salCases ?? 0,
+    salOuters: salQty?.outers ?? salOuters ?? 0,
+    salPcs: salQty?.pcs ?? salPcs ?? 0,
+    dmgCases: dmgQty?.cases ?? dmgCases ?? 0,
+    dmgOuters: dmgQty?.outers ?? dmgOuters ?? 0,
+    dmgPcs: dmgQty?.pcs ?? dmgPcs ?? 0,
+  };
+
   const { data } = await axios.put(
     `${API_URL}/${containerId}/inventory/${itemId}`,
-    updatedData,
+    payload,
     { withCredentials: true }
   );
   return data;
 };
+
+export const useUpdateInventoryItem = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateInventoryItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["containers"] });
+    }
+  });
+};
+
+
 

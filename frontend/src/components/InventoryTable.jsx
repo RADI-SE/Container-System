@@ -1,36 +1,71 @@
-import React, { memo, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import Table from "../components/Table.jsx";
 import { getInventoryColumns } from "../constants/columns.jsx";
-import { useDeleteInventoryItem } from "../hooks/useInventory.js";
+import {
+  useDeleteInventoryItem,
+  useUpdateInventoryItem,
+} from "../hooks/useInventory.js";
+import AddInventoryModal from "../components/AddInventoryModal.jsx";
 
 function InventoryTable({ data = [] }) {
   const { mutate: deleteInventoryItem } = useDeleteInventoryItem();
+  const { mutate: updateInventoryItem } = useUpdateInventoryItem();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const handleEdit = (item) => {
-    console.log("Edit item:", item);
+    setSelectedItem(item);
+    setIsModalOpen(true);
   };
- 
+
+  const handleUpdate = (formData) => {
+    if (!selectedItem) return;
+
+    updateInventoryItem({
+      containerId: selectedItem.containerId,
+      itemId: selectedItem.itemId,
+      updatedData: formData,
+    });
+
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
+
   const handleDelete = (row) => {
-    console.log("Delete item:", row);
     deleteInventoryItem({
       containerId: row.containerId,
       itemId: row.itemId,
     });
   };
-
+ 
   const columns = useMemo(
     () => getInventoryColumns(handleEdit, handleDelete),
-    [deleteInventoryItem]
+    [handleEdit, handleDelete]
   );
 
+  console.log("Inventory Table Data:", selectedItem);
   return (
-    <Table
-      title="Inventory Workspace"
-      d={data}
-      columns={columns}
-      onAddClick={() => {}}
-      onClickAssignUser={() => {}}
-    />
+    <>
+      <Table
+        title="Inventory Workspace"
+        d={data}
+        columns={columns}
+        onAddClick={() => {}}
+        onClickAssignUser={() => {}}
+      />
+
+      <AddInventoryModal
+        isOpen={isModalOpen}
+        container={selectedItem}
+        initialData={selectedItem}
+        onSubmit={handleUpdate}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedItem(null);
+        }}
+      />
+    </>
   );
 }
 

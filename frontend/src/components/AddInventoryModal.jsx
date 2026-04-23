@@ -1,51 +1,99 @@
-import React, { useState } from "react";
-import { useAddInventoryItem } from "../hooks/useInventory";
-function AddInventoryModal({ container, onClose }) {
+import React, { useState, useEffect } from "react";
+import { useAddInventoryItem, useUpdateInventoryItem } from "../hooks/useInventory";
+
+const initialFormState = {
+  itemCode: "",
+  salCases: "",
+  salOuters: "",
+  salPcs: "",
+  dmgCases: "",
+  dmgOuters: "",
+  dmgPcs: "",
+};
+
+function AddInventoryModal({ container, isOpen = true, onClose, initialData = null, onSubmit }) {
   const { mutate: addInventoryItem } = useAddInventoryItem();
-  const [form, setForm] = useState({
-    itemCode: "",
-    salCases: "",
-    salOuters: "",
-    salPcs: "",
-    dmgCases: "",
-    dmgOuters: "",
-    dmgPcs: "",
-  });
+  const { mutate: updateInventoryItem } = useUpdateInventoryItem();
+  const [form, setForm] = useState(initialFormState);
+ 
+useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      setForm({
+        itemCode: initialData.itemCode || "",
+        salCases: initialData.salQty?.cases || "",
+        salOuters: initialData.salQty?.outers || "",
+        salPcs: initialData.salQty?.pcs || "",
+        dmgCases: initialData.dmgQty?.cases || "",
+        dmgOuters: initialData.dmgQty?.outers || "",
+        dmgPcs: initialData.dmgQty?.pcs || "",
+      });
+      return;
+    }
+
+    setForm(initialFormState);
+  }, [initialData, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = (e) => {
-  e.preventDefault();
-
-  addInventoryItem({
-    containerId: container._id,
+ 
+const buildPayload = () => ({
     itemCode: form.itemCode,
     salCases: form.salCases,
     salOuters: form.salOuters,
     salPcs: form.salPcs,
     dmgCases: form.dmgCases,
     dmgOuters: form.dmgOuters,
-    dmgPcs: form.dmgPcs, 
+    dmgPcs: form.dmgPcs,
   });
 
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = buildPayload();
 
-  onClose();
-};
+    if (initialData) {
+      if (onSubmit) {
+        onSubmit(payload);
+      } else {
+        updateInventoryItem({
+          containerId: container?.containerId ?? container?._id,
+          itemId: initialData.itemId ?? initialData._id,
+          updatedData: payload,
+        });
+      }
 
+      onClose();
+      return;
+    }
 
-  if (!container) return null;
+    if (onSubmit) {
+      onSubmit(payload);
+    } else {
+      addInventoryItem({
+        containerId: container?._id ?? container?.containerId,
+        ...payload,
+      });
+    }
 
-  const displayNumber = container.containerNumber || "—";
+    onClose();
+  };
+
+  if (!container || !isOpen) return null;
+
+  const displayNumber = container.containerNumber ?? container.containerId ?? "—";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
         <div className="p-6 border-b flex justify-between items-center bg-gray-50/50">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Add inventory</h2>
+            <h2 className="text-xl font-bold text-gray-800">
+              {initialData ? "Edit inventory" : "Add inventory"}
+            </h2>
             <p className="text-sm text-gray-500 mt-1">
               Container <span className="font-semibold text-gray-700">#{displayNumber}</span>
             </p>

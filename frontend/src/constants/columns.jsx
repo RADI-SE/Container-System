@@ -81,7 +81,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
         <button
           onClick={() => {
             if (window.confirm("Are you sure you want to delete this container?")) {
-              onDelete(row.original.containerId, row.original._id);
+              onDelete(row.original._id);
             }
           }}
           className="p-1.5 text-red-600 hover:bg-red-100 rounded-md transition-colors"
