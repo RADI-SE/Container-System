@@ -27,11 +27,13 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
 
     const [existingDocs, setExistingDocs] = useState([]);
     const [submitError, setSubmitError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         if (!isOpen) return;
 
         setSubmitError('');
+        setSuccessMessage('');
         setFiles({ coa: null, PackingList: null, slips: null });
 
         if (initialData) {
@@ -102,7 +104,10 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
             updateMutation.mutate(
                 { id: initialData._id, updatedData: data },
                 {
-                    onSuccess: () => onClose(),
+                    onSuccess: (response) => {
+                        setSuccessMessage(response?.data?.message || 'Container updated successfully');
+                        setTimeout(() => onClose(), 1500);
+                    },
                     onError: (error) => {
                         setSubmitError(error.response?.data?.message || error.message || 'Failed to update container');
                     }
@@ -117,7 +122,10 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
         }
 
         addMutation.mutate(data, {
-            onSuccess: () => onClose(),
+            onSuccess: (response) => {
+                setSuccessMessage(response?.data?.message || 'Container created successfully');
+                setTimeout(() => onClose(), 1500);
+            },
             onError: (error) => {
                 setSubmitError(error.response?.data?.message || error.message || 'Failed to create container');
             }
@@ -179,6 +187,12 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
 
                 <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
                     <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+                        {successMessage && (
+                            <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 animate-pulse">
+                                ✓ {successMessage}
+                            </div>
+                        )}
+                        
                         {submitError && (
                             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                                 {submitError}
@@ -237,10 +251,10 @@ export default function AddContainerModal({ isOpen = true, onClose, initialData 
                         <button type="button" onClick={onClose} className="px-5 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded-xl transition-colors">Cancel</button>
                         <button
                             type="submit"
-                            disabled={isPending}
+                            disabled={isPending || successMessage}
                             className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-200 disabled:opacity-50 transition-all active:scale-95"
                         >
-                            {isPending ? 'Saving...' : initialData ? 'Update Container' : 'Save Container'}
+                            {isPending ? 'Saving...' : successMessage ? 'Saved!' : initialData ? 'Update Container' : 'Save Container'}
                         </button>
                     </div>
                 </form>

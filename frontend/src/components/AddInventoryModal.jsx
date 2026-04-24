@@ -12,12 +12,20 @@ const initialFormState = {
 };
 
 function AddInventoryModal({ container, isOpen = true, onClose, initialData = null, onSubmit }) {
-  const { mutate: addInventoryItem } = useAddInventoryItem();
-  const { mutate: updateInventoryItem } = useUpdateInventoryItem();
+  const addMutation = useAddInventoryItem();
+  const updateMutation = useUpdateInventoryItem();
+
+  const isPending = addMutation.isPending || updateMutation.isPending;
+
   const [form, setForm] = useState(initialFormState);
- 
-useEffect(() => {
+  const [submitError, setSubmitError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  useEffect(() => {
     if (!isOpen) return;
+
+    setSubmitError('');
+    setSuccessMessage('');
 
     if (initialData) {
       setForm({
@@ -35,51 +43,89 @@ useEffect(() => {
     setForm(initialFormState);
   }, [initialData, isOpen]);
 
+  const validateForm = () => {
+    if (!form.itemCode?.trim()) {
+      setSubmitError('Item Code is required');
+      return false;
+    }
+    return true;
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setSubmitError('');
   };
 
- 
-const buildPayload = () => ({
-    itemCode: form.itemCode,
-    salCases: form.salCases,
-    salOuters: form.salOuters,
-    salPcs: form.salPcs,
-    dmgCases: form.dmgCases,
-    dmgOuters: form.dmgOuters,
-    dmgPcs: form.dmgPcs,
-  });
+  const buildPayload = () => {
+    const payload = {
+      itemCode: form.itemCode,
+    };
+    
+    if (form.salCases) payload.salCases = Number(form.salCases);
+    if (form.salOuters) payload.salOuters = Number(form.salOuters);
+    if (form.salPcs) payload.salPcs = Number(form.salPcs);
+    if (form.dmgCases) payload.dmgCases = Number(form.dmgCases);
+    if (form.dmgOuters) payload.dmgOuters = Number(form.dmgOuters);
+    if (form.dmgPcs) payload.dmgPcs = Number(form.dmgPcs);
+    
+    return payload;
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setSubmitError('');
+
+    if (!validateForm()) {
+      return;
+    }
+
     const payload = buildPayload();
 
     if (initialData) {
       if (onSubmit) {
         onSubmit(payload);
       } else {
-        updateInventoryItem({
-          containerId: container?.containerId ?? container?._id,
-          itemId: initialData.itemId ?? initialData._id,
-          updatedData: payload,
-        });
+        updateMutation.mutate(
+          {
+            containerId: container?.containerId ?? container?._id,
+            itemId: initialData.itemId ?? initialData._id,
+            updatedData: payload,
+          },
+          {
+          onSuccess: (response) => {
+            setSuccessMessage(response?.data?.message || 'Inventory item updated successfully');
+            setTimeout(() => onClose(), 1500);
+          },
+          onError: (error) => { 
+            setSubmitError(error.response?.data?.message || error.message || 'Failed to update inventory item');
+          }
+        }
+        );
       }
 
-      onClose();
       return;
     }
 
     if (onSubmit) {
       onSubmit(payload);
     } else {
-      addInventoryItem({
-        containerId: container?._id ?? container?.containerId,
-        ...payload,
-      });
+      addMutation.mutate(
+        {
+          containerId: container?._id ?? container?.containerId,
+          ...payload,
+        },
+        {
+          onSuccess: (response) => {
+            setSuccessMessage(response?.data?.message || 'Inventory item added successfully');
+            setTimeout(() => onClose(), 1500);
+          },
+          onError: (error) => {
+            setSubmitError(error.response?.data?.message || error.message || 'Failed to add inventory item');
+          }
+        }
+      );
     }
-
-    onClose();
   };
 
   if (!container || !isOpen) return null;
@@ -110,12 +156,23 @@ const buildPayload = () => ({
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
           <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+            {successMessage && (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700 animate-pulse">
+                ✓ {successMessage}
+              </div>
+            )}
+
+            {submitError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
+
             <div className="space-y-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                 Item code
               </label>
               <input
-                required
                 name="itemCode"
                 value={form.itemCode}
                 onChange={handleChange}
@@ -131,6 +188,7 @@ const buildPayload = () => ({
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cases</label>
                   <input
                     name="salCases"
+                    type="number"
                     value={form.salCases}
                     onChange={handleChange}
                     className="w-full border border-gray-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
@@ -207,9 +265,10 @@ const buildPayload = () => ({
             </button>
             <button
               type="submit"
-              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95"
+              disabled={isPending || successMessage}
+              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-200 disabled:opacity-50 transition-all active:scale-95"
             >
-              Save inventory
+              {isPending ? 'Saving...' : successMessage ? 'Saved!' : initialData ? 'Update Inventory' : 'Save Inventory'}
             </button>
           </div>
         </form>

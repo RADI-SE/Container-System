@@ -2,6 +2,25 @@ const console = require("console");
 const Container = require("../models/container.model.js");
 const fs = require('fs');
 
+const requiredContainerFields = [
+  { key: "containerName", label: "Container Name" },
+  { key: "containerNumber", label: "Container Number" },
+  { key: "billOfLading", label: "Bill of Lading" },
+  { key: "purchaseOrder", label: "Purchase Order" },
+  { key: "invoiceNumber", label: "Invoice Number" },
+  { key: "receivingBranch", label: "Receiving Branch" },
+  { key: "region", label: "Region" }
+];
+
+const validateRequiredFields = (body) => {
+  for (const field of requiredContainerFields) {
+    if (!body[field.key]) {
+      return `${field.label} is required`;
+    }
+  }
+  return null;
+};
+
 const createContainer = async (req, res) => {
   const {
     containerName,
@@ -14,24 +33,16 @@ const createContainer = async (req, res) => {
   } = req.body;
 
   try {
-    const requiredFields = [
-      "containerName",
-      "containerNumber",
-      "billOfLading",
-      "purchaseOrder",
-      "invoiceNumber",
-      "receivingBranch",
-      "region"
-    ];
-
-    for (const field of requiredFields) {
-      if (!req.body[field]) {
-        return res.status(400).json({
-          success: false,
-          message: `${field} is required`
-        });
-      }
+    const missingFieldMessage = validateRequiredFields(req.body);
+    if (missingFieldMessage) {
+      return res.status(400).json({
+        success: false,
+        message: missingFieldMessage
+      });
     }
+
+    // Validation Pass: All required fields are present
+    console.log("✓ Validation passed: All required fields present");
 
     const existingContainer = await Container.findOne({
       $or: [
@@ -47,6 +58,7 @@ const createContainer = async (req, res) => {
       });
     }
 
+ 
     const files = req.files || {};
 
     const documents = [null, null, null];
@@ -92,9 +104,18 @@ const createContainer = async (req, res) => {
 
     const savedContainer = await newContainer.save();
 
+    // All validations passed successfully
+    console.log("✓ All validations passed: Container created successfully");
+
     res.status(201).json({
       success: true,
       message: "Container created successfully",
+      validationPassed: true,
+      validationMessages: [
+        "✓ All required fields validated",
+        "✓ Container uniqueness validated",
+        "✓ Document format validated"
+      ],
       data: savedContainer
     });
 
@@ -206,9 +227,9 @@ const shareContainer = async (req, res) => {
     container.allowedUsers.addToSet(userIdToAllow);
     await container.save();
 
-    res.status(200).json({ success: true, message: "Access shared successfully" });
+    return res.status(200).json({ success: true, message: "Access shared successfully" });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error" });
   }
 };
 const UnshareContainer = async (req, res) => {
@@ -241,13 +262,13 @@ const UnshareContainer = async (req, res) => {
     container.allowedUsers.pull(userIdToRemove);
     await container.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "User access removed",
     });
 
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error removing access",
     });
@@ -269,14 +290,14 @@ const getAvailableContainersForUser = async (req, res) => {
       .populate("owner", "name email")
       .sort({ createdAt: -1 });
  
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: containers.length,
       data: containers
     });
 
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to fetch available containers"
     });
@@ -290,9 +311,20 @@ const updateContainer = async (req, res) => {
     const container = await Container.findById(id);
     if (!container)
       return res.status(404).json({ message: "Container not found" });
-
+    
     if (container.owner.toString() !== req.userId)
       return res.status(403).json({ message: "Unauthorized" });
+
+    const missingFieldMessage = validateRequiredFields(req.body);
+    if (missingFieldMessage) {
+      return res.status(400).json({
+        success: false,
+        message: missingFieldMessage
+      });
+    }
+
+    // Validation Pass: All required fields are present
+    console.log("✓ Validation passed: All required fields present");
 
     const updateData = { ...req.body };
 
@@ -345,13 +377,14 @@ const updateContainer = async (req, res) => {
       { new: true }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
+      message: "Container updated successfully",
       data: updatedContainer,
     });
 
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
@@ -373,125 +406,6 @@ const deleteContainer = async (req, res) => {
     res.status(200).json({ success: true, message: "Container deleted successfully" });
   } catch (error) {
     res.status(500).json({ success: false, message: "Error deleting container" });
-  }
-};
-
-
-
-const addInventoryItem = async (req, res) => {
-  const { containerId } = req.params;
-  const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body
-
-  try {
-    const container = await Container.findById(containerId);
-    if (!container) {
-      return res.status(404).json({ success: false, message: "Container not found" });
-    }
-
-    const isOwner = container.owner.toString() === req.userId;
-    const isAllowed = container.allowedUsers.some(
-      (user) => user.toString() === req.userId
-    );
-
-    if (!isOwner && !isAllowed) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized: You do not have permission to add items to this container"
-      });
-    }
-
-
-
-    const newItem = {
-      itemCode,
-      salQty: {
-        cases: Number(salCases) || 0,
-        outers: Number(salOuters) || 0,
-        pcs: Number(salPcs) || 0
-      },
-      dmgQty: {
-        cases: Number(dmgCases) || 0,
-        outers: Number(dmgOuters) || 0,
-        pcs: Number(dmgPcs) || 0
-      },
-      addedBy: req.userId
-    };
-
-    container.inventory.push(newItem);
-    await container.save(); 
-    res.status(201).json({
-      success: true,
-      message: "Item added to manifest successfully",
-      data: container.inventory[container.inventory.length - 1]
-    });
-
-  } catch (error) {
-    console.error("Add Inventory Error:", error);
-    res.status(500).json({ success: false, message: "Server error while adding item" });
-  }
-};
-
-
-const updateInventoryItem = async (req, res) => {
-  const { containerId, itemId } = req.params;
-  const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body;
-
-  console.log(`Updating inventory item with data:`, { containerId, itemId, itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs });
-  try {
-    const container = await Container.findOneAndUpdate(
-      {
-        _id: containerId,
-        "inventory._id": itemId
-      },
-      {
-        $set: {
-          "inventory.$.itemCode": itemCode,
-          "inventory.$.salQty": {
-            cases: Number(salCases) || 0,
-            outers: Number(salOuters) || 0,
-            pcs: Number(salPcs) || 0
-          },
-          "inventory.$.dmgQty": {
-            cases: Number(dmgCases) || 0,
-            outers: Number(dmgOuters) || 0,
-            pcs: Number(dmgPcs) || 0
-          },
-          "inventory.$.updatedAt": Date.now()
-        }
-      },
-      { new: true, runValidators: true }
-    );
-
-    if (!container) {
-      return res.status(404).json({ success: false, message: "Container or Item not found" });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Inventory row updated successfully",
-      data: container.inventory
-    });
-
-  } catch (error) {
-    res.status(500).json({ success: false, message: "Error updating inventory row" });
-  }
-};
-
-const deleteInventoryItem = async (req, res) => {
-  const { containerId, itemId } = req.params; // containerId = container, itemId = the row
-
-  try {
-    const container = await Container.findByIdAndUpdate(
-      containerId,
-      { $pull: { inventory: { _id: itemId } } },
-      { new: true }
-    );
-
-    if (!container) return res.status(404).json({ message: "Not found" });
-
-    res.status(200).json({ success: true, message: "Row removed from table" });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -526,53 +440,6 @@ const getUserContainers = async (req, res) => {
 
 
 
-
-const getUserInventoryTableData = async (req, res) => {
-  try {
-    const { userId } = req.params;
- 
-    const containers = await Container.find({
-      $or: [{ owner: userId }, { allowedUsers: userId }]
-    })
-      .populate("owner", "name email")
-      .sort({ createdAt: -1 });
- 
-    const containersWithInventory = containers.filter(
-      (c) => c.inventory && c.inventory.length > 0
-    );
- 
-    const tableData = containersWithInventory.flatMap((container) =>
-      container.inventory.map((item) => ({
-      
-        containerId: container._id,
-        containerNumber: container.containerNumber,
-        ownerName: container.owner?.name || "—",
-
-        itemId: item._id,
-        itemCode: item.itemCode,
-        salQty: item.salQty,
-        dmgQty: item.dmgQty,
-        addedBy: item.addedBy,
-        createdAt: item.createdAt,
-      }))
-    );
-
-    console.log(`Found ${tableData.length} inventory rows for user ${userId}`);
-
-    res.status(200).json({
-      success: true,
-      count: tableData.length,
-      data: tableData,
-    });
-  } catch (error) {
-    console.error("getUserInventoryTableData error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch inventory table data",
-    });
-  }
-};
-
 module.exports = {
   createContainer,
   getContainers,
@@ -582,10 +449,5 @@ module.exports = {
   getAvailableContainersForUser,
   updateContainer,
   deleteContainer,
-  addInventoryItem,
-  updateInventoryItem,
-  deleteInventoryItem,
-  getUserContainers,
-  getUserInventoryTableData
-  
+  getUserContainers
 };

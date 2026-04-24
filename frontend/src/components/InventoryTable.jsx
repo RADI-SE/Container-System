@@ -9,7 +9,6 @@ import AddInventoryModal from "../components/AddInventoryModal.jsx";
 
 function InventoryTable({ data = [] }) {
   const { mutate: deleteInventoryItem } = useDeleteInventoryItem();
-  const { mutate: updateInventoryItem } = useUpdateInventoryItem();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -17,19 +16,6 @@ function InventoryTable({ data = [] }) {
   const handleEdit = (item) => {
     setSelectedItem(item);
     setIsModalOpen(true);
-  };
-
-  const handleUpdate = (formData) => {
-    if (!selectedItem) return;
-
-    updateInventoryItem({
-      containerId: selectedItem.containerId,
-      itemId: selectedItem.itemId,
-      updatedData: formData,
-    });
-
-    setIsModalOpen(false);
-    setSelectedItem(null);
   };
 
   const handleDelete = (row) => {
@@ -59,7 +45,6 @@ function InventoryTable({ data = [] }) {
         isOpen={isModalOpen}
         container={selectedItem}
         initialData={selectedItem}
-        onSubmit={handleUpdate}
         onClose={() => {
           setIsModalOpen(false);
           setSelectedItem(null);

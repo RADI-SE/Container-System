@@ -1,49 +1,98 @@
 const mongoose = require('mongoose');
 
+
 const inventorySchema = new mongoose.Schema({
   itemCode: {
     type: String,
     required: [true, "Item code is required"],
     trim: true,
-    uppercase: true, 
+    uppercase: true,
     match: [/^[A-Z0-9-]+$/, "Item code can only contain letters, numbers, and hyphens"]
   },
+
+  // ===== SALES QUANTITY =====
   salQty: {
-    cases: { type: Number, default: 0, min: [0, "Cases cannot be negative"] },
-    outers: { type: Number, default: 0, min: [0, "Outers cannot be negative"] },
-    pcs: { type: Number, default: 0, min: [0, "Pieces cannot be negative"] }
+    cases: {
+      type: Number,
+      default: 0,
+      min: [0, "Cases cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Cases must be a whole number"
+      }
+    },
+    outers: {
+      type: Number,
+      default: 0,
+      min: [0, "Outers cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Outers must be a whole number"
+      }
+    },
+    pcs: {
+      type: Number,
+      default: 0,
+      min: [0, "Pieces cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Pieces must be a whole number"
+      }
+    }
   },
+
+  // ===== DAMAGED QUANTITY =====
   dmgQty: {
-    cases: { type: Number, default: 0, min: [0, "Damaged cases cannot be negative"] },
-    outers: { type: Number, default: 0, min: [0, "Damaged outers cannot be negative"] },
-    pcs: { type: Number, default: 0, min: [0, "Damaged pieces cannot be negative"] }
+    cases: {
+      type: Number,
+      default: 0,
+      min: [0, "Damaged cases cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Damaged cases must be a whole number"
+      }
+    },
+    outers: {
+      type: Number,
+      default: 0,
+      min: [0, "Damaged outers cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Damaged outers must be a whole number"
+      }
+    },
+    pcs: {
+      type: Number,
+      default: 0,
+      min: [0, "Damaged pieces cannot be negative"],
+      validate: {
+        validator: Number.isInteger,
+        message: "Damaged pieces must be a whole number"
+      }
+    }
   },
+
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  createdAt: { type: Date, default: Date.now }
-});
-
-
-inventorySchema.pre('validate', function(next) {
-  const totalQty = 
-    this.salQty.cases + this.salQty.outers + this.salQty.pcs +
-    this.dmgQty.cases + this.dmgQty.outers + this.dmgQty.pcs;
-
-  if (totalQty <= 0) {
-    this.invalidate('salQty.cases', 'You must provide at least one quantity (SAL or DMG)');
+    ref: "User",
+    required: true,
+    index: true
   }
-  next();
+
+}, { timestamps: true });
+
+inventorySchema.pre("findOneAndUpdate", function () {
+  this.setOptions({ runValidators: true });
 });
 
-inventorySchema.virtual('totalSalPcs').get(function() {
-   return (this.salQty.cases || 0) + (this.salQty.outers || 0) + (this.salQty.pcs || 0);
+inventorySchema.pre("updateOne", function () {
+  this.setOptions({ runValidators: true });
 });
 
- inventorySchema.set('toJSON', { virtuals: true });
-inventorySchema.set('toObject', { virtuals: true });
+inventorySchema.pre("updateMany", function () {
+  this.setOptions({ runValidators: true });
+});
+
 const containerSchema = new mongoose.Schema({
   containerName: {
     type: String,
