@@ -29,8 +29,7 @@ function InventoryTable({ data = [] }) {
     () => getInventoryColumns(handleEdit, handleDelete),
     [handleEdit, handleDelete]
   );
-
-  console.log("Inventory Table Data:", selectedItem);
+ 
   return (
     <>
       <Table

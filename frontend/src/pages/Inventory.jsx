@@ -10,8 +10,7 @@ function Inventory() {
     const { user } = useAuthStore();
   const userId = user?._id || user?.id; 
    const { data: inventoryData  } = useUserInventoryTableData(userId);
-
-   console.log("Inventory Data:", inventoryData); 
+ 
   const handleSelectContainer = (container) => {
     if (container) setModalContainer(container);
   };

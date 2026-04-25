@@ -2,7 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Users,
   LogOut,
-  Package
+  Package,
+  FileText
 } from "lucide-react";
 import useAuthStore from "../../store/useAuthStore"; 
 
@@ -15,6 +16,7 @@ export default function Sidebar() {
   const menuByRole = {
     admin: [ 
       { name: "Manage Containers", path: "/containers", icon: <Package size={18} /> },
+      { name: "Reports", path: "/reports", icon: <FileText size={18} /> },
     ],
  
     staff: [

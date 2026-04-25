@@ -190,3 +190,65 @@ export const getInventoryColumns = (onEdit, onDelete) => [
     ),
   },
 ];
+
+
+
+export const getReportsColumns = (onEdit, onDelete) => [
+  {
+    header: "Container No",
+    accessorKey: "containerNumber",
+  },
+  {
+    header: "Item Code",
+    accessorKey: "itemCode",
+  },
+
+  {
+    id: "salCases",
+    header: "SAL Cases",
+    accessorFn: row => row.salQty?.cases ?? 0,
+  },
+  {
+    id: "salOuters",
+    header: "SAL Outers",
+    accessorFn: row => row.salQty?.outers ?? 0,
+  },
+  {
+    id: "salPcs",
+    header: "SAL PCS",
+    accessorFn: row => row.salQty?.pcs ?? 0,
+  },
+
+  {
+    id: "dmgCases",
+    header: "DMG Cases",
+    accessorFn: row => row.dmgQty?.cases ?? 0,
+  },
+  {
+    id: "dmgOuters",
+    header: "DMG Outers",
+    accessorFn: row => row.dmgQty?.outers ?? 0,
+  },
+  {
+    id: "dmgPcs",
+    header: "DMG PCS",
+    accessorFn: row => row.dmgQty?.pcs ?? 0,
+  },
+
+  {
+    header: "Owner",
+    accessorKey: "ownerName",
+  },
+  {
+    header: "Added By",
+    accessorKey: "addedBy", 
+  },
+  {
+    id: "date",
+    header: "Date",
+    accessorFn: row =>
+      row.createdAt
+        ? new Date(row.createdAt).toLocaleDateString()
+        : "—",
+  },
+];

@@ -9,6 +9,7 @@ import Containers from './pages/Containers';
 import Staff from './pages/Staff';
 import ContainerDetails from './components/ContainerDetails';
 import Inventory from './pages/Inventory';
+import Reports from './pages/Reports';
 
 
 const queryClient = new QueryClient({
@@ -45,6 +46,16 @@ function DashboardContent() {
               </PrivateRoute>
             }
           />
+
+          <Route
+            path="reports"
+            element={
+              <PrivateRoute allowedRoles={["admin"]}>
+                <Reports />
+              </PrivateRoute>
+            }
+          />
+
           <Route path="staff-containers" element={
             <PrivateRoute allowedRoles={["staff"]}>
               <Staff />

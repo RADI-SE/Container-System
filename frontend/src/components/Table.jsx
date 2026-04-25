@@ -14,6 +14,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
     return [];
   }, [d]);
 
+  console.log("Table data:", tableData);
   const table = useReactTable({
     data: tableData,
     columns,
@@ -45,7 +46,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
             {tableData.length} Records Found
           </div>
 
-          {title !== "Inventory Workspace" && (
+          {title !== "Inventory Workspace" || title === "Reports" && (
             <>
               <button
                 onClick={onAddClick}

@@ -265,6 +265,7 @@ const getUserInventoryTableData = async (req, res) => {
       $or: [{ owner: userId }, { allowedUsers: userId }]
     })
       .populate("owner", "name email")
+      .populate("inventory.addedBy", "name email")
       .sort({ createdAt: -1 });
  
     const containersWithInventory = containers.filter(
@@ -282,7 +283,7 @@ const getUserInventoryTableData = async (req, res) => {
         itemCode: item.itemCode,
         salQty: item.salQty,
         dmgQty: item.dmgQty,
-        addedBy: item.addedBy,
+        addedBy: item.addedBy?.name || "—",
         createdAt: item.createdAt,
       }))
     );
