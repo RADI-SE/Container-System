@@ -21,14 +21,18 @@ export const getContainerColumns = (onEdit, onDelete) => [
   {
     header: "Invoice",
     accessorKey: "invoiceNumber",
+     enableGlobalFilter: false,
   },
+
   {
     header: "Branch",
     accessorKey: "receivingBranch",
+     enableGlobalFilter: false,
   },
   {
     header: "Region",
     accessorKey: "region",
+     enableGlobalFilter: false,
   },
   {
     header: "Shared With",
@@ -40,6 +44,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
   {
     header: "Documents",
     accessorKey: "documents",
+     enableGlobalFilter: false,
     cell: ({ row }) => {
       const docs = (row.original.documents || []).filter(
         (doc) => doc && typeof doc.filePath === 'string' && doc.filePath.trim() !== ''
@@ -77,6 +82,7 @@ export const getContainerColumns = (onEdit, onDelete) => [
   {
     id: "actions",
     header: "Actions",
+     enableGlobalFilter: false,
     cell: ({ row }) => (
       <div className="flex gap-2">
 
@@ -120,37 +126,44 @@ export const getInventoryColumns = (onEdit, onDelete) => [
     id: "salCases",
     header: "SAL Cases",
     accessorFn: row => row.salQty?.cases ?? 0,
+     enableGlobalFilter: false,
   },
   {
     id: "salOuters",
     header: "SAL Outers",
     accessorFn: row => row.salQty?.outers ?? 0,
+     enableGlobalFilter: false,
   },
   {
     id: "salPcs",
     header: "SAL PCS",
     accessorFn: row => row.salQty?.pcs ?? 0,
+     enableGlobalFilter: false,
   },
 
   {
     id: "dmgCases",
     header: "DMG Cases",
     accessorFn: row => row.dmgQty?.cases ?? 0,
+     enableGlobalFilter: false,
   },
   {
     id: "dmgOuters",
     header: "DMG Outers",
     accessorFn: row => row.dmgQty?.outers ?? 0,
+     enableGlobalFilter: false,
   },
   {
     id: "dmgPcs",
     header: "DMG PCS",
     accessorFn: row => row.dmgQty?.pcs ?? 0,
+     enableGlobalFilter: false,
   },
 
   {
     header: "Owner",
     accessorKey: "ownerName",
+     enableGlobalFilter: false,
   },
 
   {
@@ -165,6 +178,7 @@ export const getInventoryColumns = (onEdit, onDelete) => [
   {
     id: "actions",
     header: "Actions",
+     enableGlobalFilter: false,
     cell: ({ row }) => (
       <div className="flex gap-2">
         <button
@@ -207,37 +221,44 @@ export const getReportsColumns = (onEdit, onDelete) => [
     id: "salCases",
     header: "SAL Cases",
     accessorFn: row => row.salQty?.cases ?? 0,
+    enableGlobalFilter: false,
   },
   {
     id: "salOuters",
     header: "SAL Outers",
     accessorFn: row => row.salQty?.outers ?? 0,
+    enableGlobalFilter: false,
   },
   {
     id: "salPcs",
     header: "SAL PCS",
     accessorFn: row => row.salQty?.pcs ?? 0,
+    enableGlobalFilter: false,
   },
 
   {
     id: "dmgCases",
     header: "DMG Cases",
     accessorFn: row => row.dmgQty?.cases ?? 0,
+      enableGlobalFilter: false,
   },
   {
     id: "dmgOuters",
     header: "DMG Outers",
     accessorFn: row => row.dmgQty?.outers ?? 0,
+      enableGlobalFilter: false,
   },
   {
     id: "dmgPcs",
     header: "DMG PCS",
     accessorFn: row => row.dmgQty?.pcs ?? 0,
+      enableGlobalFilter: false,
   },
 
   {
     header: "Owner",
     accessorKey: "ownerName",
+    enableGlobalFilter: false,
   },
   {
     header: "Added By",

@@ -1,30 +1,39 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel, 
+  getPaginationRowModel,
   flexRender,
+  getFilteredRowModel
 } from "@tanstack/react-table";
 
 function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
-  
+
+  const [globalFilter, setGlobalFilter] = useState("");
   const tableData = useMemo(() => {
+
     if (Array.isArray(d)) return d;
     if (d?.data && Array.isArray(d.data)) return d.data;
     return [];
   }, [d]);
 
-  console.log("Table data:", tableData);
   const table = useReactTable({
     data: tableData,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(), 
+    getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
-        pageSize: 5, 
+        pageSize: 5,
       },
     },
+    state: {
+      globalFilter,
+    },
+
+    onGlobalFilterChange: setGlobalFilter,
+
+    getFilteredRowModel: getFilteredRowModel(),
   });
 
   if (!columns || columns.length === 0) {
@@ -37,10 +46,31 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
 
   return (
     <div className="w-full flex flex-col space-y-4">
-     
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <h2 className="text-xl font-bold text-gray-800 tracking-tight">{title}</h2>
 
+        <div className="relative w-full sm:w-72">
+          <input
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search anything..."
+            className="
+      w-full pl-10 pr-4 py-2.5
+      text-sm text-gray-700
+      bg-white
+      border border-gray-200
+      rounded-lg
+      shadow-sm
+      transition-all duration-200
+      placeholder:text-gray-400
+      focus:outline-none
+      focus:ring-2 focus:ring-blue-500
+      focus:border-blue-500
+      hover:border-gray-300
+    "
+          />
+        </div>
         <div className="flex items-center gap-3">
           <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full w-fit">
             {tableData.length} Records Found
@@ -103,7 +133,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
             </tbody>
           </table>
         </div>
-      
+
         <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">
