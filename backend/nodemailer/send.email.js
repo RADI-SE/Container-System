@@ -18,15 +18,11 @@ const sendEmail = async ({ email, subject, message }) => {
     subject: subject,
     text: message,
   };
-
+  
+  console.log("Sending email with options:", mailOptions);
   await transporter.sendMail(mailOptions);
 };
 
 module.exports = sendEmail
 
-
-/*
-- Integrated Nodemailer for sending password reset emails  
-- Created Reset Password page in the frontend  
-- Implemented API call to handle password reset requests  
-*/
+ 

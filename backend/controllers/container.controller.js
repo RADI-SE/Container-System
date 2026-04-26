@@ -14,7 +14,8 @@ const requiredContainerFields = [
 
 const validateRequiredFields = (body) => {
   for (const field of requiredContainerFields) {
-    if (!body[field.key]) {
+    if (!body[field.key] || body[field.key].toString().trim() === "") {
+
       return `${field.label} is required`;
     }
   }
@@ -277,19 +278,17 @@ const UnshareContainer = async (req, res) => {
 
 const getAvailableContainersForUser = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { adminId, userId } = req.params;
 
-    console.log("Fetching available containers for userId:", userId);
     const containers = await Container.find({
-      $or: [
-        { allowedUsers: { $ne: userId } },
-        { allowedUsers: { $exists: false } },
-        { allowedUsers: { $size: 0 } }
-      ]
+      owner: adminId, 
+      allowedUsers: { $nin: [userId] } 
     })
-      .populate("owner", "name email")
-      .sort({ createdAt: -1 });
- 
+    .populate("owner", "name email")
+    .sort({ createdAt: -1 });
+
+    console.log(`Found ${containers.length} available containers for userId ${userId} under adminId ${adminId}`);
+
     return res.status(200).json({
       success: true,
       count: containers.length,

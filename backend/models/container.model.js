@@ -10,8 +10,7 @@ const inventorySchema = new mongoose.Schema({
     match: [/^[A-Z0-9-]+$/, "Item code can only contain letters, numbers, and hyphens"]
   },
 
-  // ===== SALES QUANTITY =====
-  salQty: {
+   salQty: {
     cases: {
       type: Number,
       default: 0,
@@ -40,8 +39,7 @@ const inventorySchema = new mongoose.Schema({
       }
     }
   },
-
-  // ===== DAMAGED QUANTITY =====
+ 
   dmgQty: {
     cases: {
       type: Number,

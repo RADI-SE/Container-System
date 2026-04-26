@@ -63,41 +63,17 @@ export const useDeleteInventoryItem = () => {
 
 
 const updateInventoryItem = async ({ containerId, itemId, updatedData }) => {
-  const {
-    itemCode,
-    salQty,
-    dmgQty,
-    salCases,
-    salOuters,
-    salPcs,
-    dmgCases,
-    dmgOuters,
-    dmgPcs,
-  } = updatedData;
-
-  const payload = {
-    itemCode,
-    salCases: salQty?.cases ,
-    salOuters: salQty?.outers ,
-    salPcs: salQty?.pcs ,
-    dmgCases: dmgQty?.cases ,
-    dmgOuters: dmgQty?.outers ,
-    dmgPcs: dmgQty?.pcs ,
-  };
-
-  try {
+  try { 
+    
     const res = await api.put(
       `/inventory/${containerId}/inventory/${itemId}`,
-      payload
+      updatedData 
     );
     return res.data;
   } catch (error) { 
     throw error.response?.data || error;
   }
-
-
 };
-
 export const useUpdateInventoryItem = () => {
   const queryClient = useQueryClient();
 

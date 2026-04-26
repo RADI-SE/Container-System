@@ -76,7 +76,7 @@ function Table({ title, d = {}, columns = [], onAddClick, onClickAssignUser }) {
             {tableData.length} Records Found
           </div>
 
-          {title !== "Inventory Workspace" || title === "Reports" && (
+          {title !== "Inventory Workspace" && title !== "Reports" && (
             <>
               <button
                 onClick={onAddClick}

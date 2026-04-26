@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAssignContainers } from '../../hooks/useContainers';
-
+import  useAuth  from '../../store/useAuthStore';
 function AssignContainersModal({ isOpen, onClose }) {
     const [users, setUsers] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState('');
     const [selectedContainerId, setSelectedContainerId] = useState('');
     const [loadingUsers, setLoadingUsers] = useState(false);
     const [containers, setContainers] = useState([]);
+    const { user } = useAuth();
+    const adminId = user?._id;
 
     const { mutate: assignMutate, isPending } = useAssignContainers();
 
@@ -53,7 +55,7 @@ function AssignContainersModal({ isOpen, onClose }) {
 
         const fetchAvailable = async () => {
             const { data } = await axios.get(
-                `http://localhost:5000/api/containers/available/${selectedUserId}`,
+                `http://localhost:5000/api/containers/available/${adminId}/${selectedUserId}`,
                 { withCredentials: true }
             );
 

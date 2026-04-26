@@ -18,7 +18,7 @@ router.post(
 router.get("/",verifyToken, getContainers);
 router.post('/share',verifyToken,shareContainer)
 router.put('/unshare',verifyToken,UnshareContainer)
-router.get("/available/:userId", verifyToken, getAvailableContainersForUser);
+router.get("/available/:adminId/:userId", verifyToken, getAvailableContainersForUser);
  
 
 router.put("/:id", verifyToken,

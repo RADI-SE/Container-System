@@ -19,7 +19,7 @@ const validateRequiredFields = (body) => {
     if (value === undefined || value === null || value === "") {
       return `${field.label} is required`;
     }
- 
+
     if (field.type === "number") {
       if (typeof value !== "number" || isNaN(value)) {
         return `${field.label} must be a number`;
@@ -66,9 +66,9 @@ const addInventoryItem = async (req, res) => {
     if (!container) {
       return res.status(404).json({ success: false, message: "Container not found" });
     }
- 
+
     sanitizeNumbers(req.body);
- 
+
     const missingFieldMessage = validateRequiredFields(req.body);
     if (missingFieldMessage) {
       return res.status(400).json({
@@ -90,7 +90,7 @@ const addInventoryItem = async (req, res) => {
         message: "Unauthorized: You do not have permission to add items to this container"
       });
     }
- 
+
     const newItem = {
       itemCode,
       salQty: {
@@ -121,97 +121,70 @@ const addInventoryItem = async (req, res) => {
   }
 };
 
-
 const updateInventoryItem = async (req, res) => {
   const { containerId, itemId } = req.params;
+  const { itemCode, salCases, salOuters, salPcs, dmgCases, dmgOuters, dmgPcs } = req.body;
 
   try {
     const container = await Container.findById(containerId);
-    if (!container) {
-      return res.status(404).json({ success: false, message: "Container not found" });
-    }
- 
+    if (!container) return res.status(404).json({ message: "Container not found" });
+
     const isOwner = container.owner.toString() === req.userId;
-    const isAllowed = container.allowedUsers.some(
-      (user) => user.toString() === req.userId
-    );
+    const isAllowed = container.allowedUsers.some(id => id.toString() === req.userId);
 
     if (!isOwner && !isAllowed) {
-      return res.status(403).json({
-        success: false,
-        message: "Unauthorized: You do not have permission to update items in this container"
-      });
+      return res.status(403).json({ message: "Unauthorized access" });
     }
+
     sanitizeNumbers(req.body);
     
     const missingFieldMessage = validateRequiredFields(req.body);
     if (missingFieldMessage) {
-      console.log("sanitizeNumbers:",missingFieldMessage);
+      console.log("sanitizeNumbers:", missingFieldMessage);
       return res.status(400).json({
         success: false,
         message: missingFieldMessage
       });
     }
 
-    const {
-      itemCode,
-      salCases,
-      salOuters,
-      salPcs,
-      dmgCases,
-      dmgOuters,
-      dmgPcs
-    } = req.body;
-
     const updatedContainer = await Container.findOneAndUpdate(
-      {
-        _id: containerId,
-        "inventory._id": itemId
-      },
+      { _id: containerId, "inventory._id": itemId },
       {
         $set: {
           "inventory.$.itemCode": itemCode,
           "inventory.$.salQty": {
-            cases: salCases,
-            outers: salOuters,
-            pcs: salPcs
+            cases: Number(salCases) || 0,
+            outers: Number(salOuters) || 0,
+            pcs: Number(salPcs) || 0
           },
           "inventory.$.dmgQty": {
-            cases: dmgCases,
-            outers: dmgOuters,
-            pcs: dmgPcs
-          },
-          "inventory.$.updatedAt": Date.now()
+            cases: Number(dmgCases) || 0,
+            outers: Number(dmgOuters) || 0,
+            pcs: Number(dmgPcs) || 0
+          }
         }
       },
-      {
-        new: true,
-        runValidators: true,
-        context: "query" 
-      }
+      { new: true, runValidators: true }
     );
 
     if (!updatedContainer) {
-      return res.status(404).json({
-        success: false,
-        message: "Container or Item not found"
-      });
+      return res.status(404).json({ message: "Item not found" });
     }
 
     res.status(200).json({
       success: true,
-      message: "Inventory row updated successfully",
+      message: "Updated successfully",
       data: updatedContainer.inventory
     });
 
   } catch (error) {
-    console.error("Add Inventory Error:", error);
-    res.status(500).json({ success: false, message: "Server error while updating item" });
+    res.status(500).json({ message: error.message });
   }
 };
 
+
 const deleteInventoryItem = async (req, res) => {
-  const { containerId, itemId } = req.params; 
+  const { containerId, itemId } = req.params;
 
   try {
     const container = await Container.findByIdAndUpdate(
@@ -260,21 +233,21 @@ const getUserContainers = async (req, res) => {
 const getUserInventoryTableData = async (req, res) => {
   try {
     const { userId } = req.params;
- 
+
     const containers = await Container.find({
       $or: [{ owner: userId }, { allowedUsers: userId }]
     })
       .populate("owner", "name email")
       .populate("inventory.addedBy", "name email")
       .sort({ createdAt: -1 });
- 
+
     const containersWithInventory = containers.filter(
       (c) => c.inventory && c.inventory.length > 0
     );
- 
+
     const tableData = containersWithInventory.flatMap((container) =>
       container.inventory.map((item) => ({
-      
+
         containerId: container._id,
         containerNumber: container.containerNumber,
         ownerName: container.owner?.name || "—",
@@ -310,5 +283,5 @@ module.exports = {
   deleteInventoryItem,
   getUserContainers,
   getUserInventoryTableData
-  
+
 };

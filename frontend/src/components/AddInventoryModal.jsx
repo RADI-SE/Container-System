@@ -56,72 +56,48 @@ function AddInventoryModal({ container, isOpen = true, onClose, initialData = nu
     setForm((prev) => ({ ...prev, [name]: value }));
     setSubmitError('');
   };
+ 
 
   const buildPayload = () => {
-    const payload = {
+    return {
       itemCode: form.itemCode,
+      salCases: Number(form.salCases) || 0,
+      salOuters: Number(form.salOuters) || 0,
+      salPcs: Number(form.salPcs) || 0,
+      dmgCases: Number(form.dmgCases) || 0,
+      dmgOuters: Number(form.dmgOuters) || 0,
+      dmgPcs: Number(form.dmgPcs) || 0,
     };
-    
-    if (form.salCases) payload.salCases = Number(form.salCases);
-    if (form.salOuters) payload.salOuters = Number(form.salOuters);
-    if (form.salPcs) payload.salPcs = Number(form.salPcs);
-    if (form.dmgCases) payload.dmgCases = Number(form.dmgCases);
-    if (form.dmgOuters) payload.dmgOuters = Number(form.dmgOuters);
-    if (form.dmgPcs) payload.dmgPcs = Number(form.dmgPcs);
-    
-    return payload;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setSubmitError('');
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const payload = buildPayload();
 
     if (initialData) {
-      if (onSubmit) {
-        onSubmit(payload);
-      } else {
-        updateMutation.mutate(
-          {
-            containerId: container?.containerId ?? container?._id,
-            itemId: initialData.itemId ?? initialData._id,
-            updatedData: payload,
-          },
-          {
-          onSuccess: (response) => {
-            setSuccessMessage(response?.data?.message || 'Inventory item updated successfully');
-            setTimeout(() => onClose(), 1500);
-          },
-          onError: (error) => { 
-            setSubmitError(error.response?.data?.message || error.message || 'Failed to update inventory item');
-          }
-        }
-        );
-      }
-
-      return;
-    }
-
-    if (onSubmit) {
-      onSubmit(payload);
-    } else {
-      addMutation.mutate(
+      updateMutation.mutate(
         {
-          containerId: container?._id ?? container?.containerId,
-          ...payload,
+          containerId: container._id || container.containerId,
+          itemId: initialData._id || initialData.itemId,
+          updatedData: payload, // Sending flat payload
         },
         {
           onSuccess: (response) => {
-            setSuccessMessage(response?.data?.message || 'Inventory item added successfully');
+            setSuccessMessage('Updated successfully');
             setTimeout(() => onClose(), 1500);
           },
-          onError: (error) => {
-            setSubmitError(error.response?.data?.message || error.message || 'Failed to add inventory item');
+          onError: (err) => setSubmitError(err.message || 'Update failed')
+        }
+      );
+    } else {
+      addMutation.mutate(
+        { containerId: container._id, ...payload },
+        {
+          onSuccess: () => {
+            setSuccessMessage('Added successfully');
+            setTimeout(() => onClose(), 1500);
           }
         }
       );
